@@ -1,0 +1,136 @@
+\documentclass[useAMS,usenatbib,onecolumn,12pt]{mnras}
+\pdfoutput=1
+
+%\usepackage{amsmath}
+\usepackage{mathtext,amssymb,amsmath}
+\usepackage{epsfig}
+\usepackage{graphics}
+% \usepackage{float}
+\usepackage[utf8x]{inputenc}
+\usepackage[english]{babel}
+
+% If your system does not have the AMS fonts version 2.0 installed, then
+% remove the useAMS option.
+%
+% useAMS allows you to obtain upright Greek characters.
+% e.g. \umu, \upi etc.  See the section on "Upright Greek characters" in
+% this guide for further information.
+%
+% If you are using AMS 2.0 fonts, bold math letters/symbols are available
+% at a larger range of sizes for NFSS release 1 and 2 (using \boldmath or
+% preferably \bmath).
+%
+% The usenatbib command allows the use of Patrick Daly's natbib.sty for
+% cross-referencing.
+%
+% If you wish to typeset the paper in Times font (if you do not have the
+% PostScript Type 1 Computer Modern fonts you will need to do this to get
+% smoother fonts in a PDF file) then uncomment the next line
+%\usepackage{Times}
+
+%%%%% AUTHORS - PLACE YOUR OWN MACROS HERE %%%%%
+
+\renewcommand{\vector}[1]{\ensuremath{\mathbf{#1}}}
+
+\newcommand{\Mach}{\ensuremath{\mathcal{M}}}
+\newcommand{\rot}{\ensuremath{\mathbf{curl\,}}}
+\newcommand{\mdot}{\ensuremath{\dot{m}}}
+\newcommand{\Msun}{\ensuremath{\rm M_\odot}}
+\newcommand{\Msunyr}{\ensuremath{\rm M_\odot\, \rm yr^{-1}}}
+\newcommand{\ergl}{\ensuremath{\rm erg\, s^{-1}}}
+\newcommand{\Gyr}{\ensuremath{\rm Gyr}}
+\newcommand{\yr}{\ensuremath{\rm yr}}
+\newcommand{\pc}{\ensuremath{\rm pc}}
+\newcommand{\cmc}{\ensuremath{\rm cm^{-3}}}
+\newcommand{\cmsq}{\ensuremath{\rm cm^{-2}}}
+\newcommand{\Ry}{\ensuremath{\rm Ry}}
+\newcommand{\AAA}{\ensuremath{\rm \AA}}
+\newcommand{\acos}{\ensuremath{\rm acos}\,}
+\newcommand{\litwo}{\ensuremath{\rm Li}_2\,}
+\newcommand{\lithree}{\ensuremath{\rm Li}_3\,}
+\newcommand{\li}[2]{{\rm Li}_{#1}\!\left(#2\right)}
+\newcommand{\gf}{\ensuremath{\frac{\sqrt{g_{\varphi\varphi}}}{\alpha}}}
+\newcommand{\pardir}[2]{\ensuremath{\frac{\partial #2}{\partial #1} }}
+\newcommand{\eps}{\epsilon}
+
+\newcommand{\wftj}{WF1~J2026-4536}
+\newcommand{\grs}{GRS~1915+105}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title[]{}
+\begin{document}
+
+\date{Accepted ---. Received ---; in
+  original form --- }
+
+\pagerange{\pageref{firstpage}--\pageref{lastpage}} \pubyear{2012}
+
+\maketitle
+
+\label{firstpage}
+
+\begin{abstract}
+\end{abstract}
+
+\begin{keywords}
+\end{keywords}
+
+\section{Model setup}
+
+Dynamics of the layer may be reduced to two equations, one for mass and the other for angular momentum conservation. Mass is supplied from the disc and precipitates from the layer onto the surface of the star, that may be written as
+\begin{equation}\label{E:dM}
+  \frac{dM}{dt} = \dot{M} - \frac{M}{t_{\rm depl}},
+\end{equation}
+where $\dot{M}$ is the mass supply rate from the disc, and $t_{\rm depl} \gg \sqrt{R^3/GM_{\rm NS}}$ is the mass depletion time scale that we will hereafter assume fixed.
+
+For angular momentum, conservation also involves sources and sinks related to the interaction with the surface of the star.
+Numerical simulations such as \citet{belyaev13} suggest that the interaction between the BL and the surface of the star is inefficient, with the stress mainly related to the Reynolds stress $T_{\rm r\varphi} \sim 10^{-6}P$, where $P$ is pressure at the bottom of the layer.
+We will assume that the stress on the bottom of the layer is proportional to the pressure with a small proportionality coefficient $\alpha \ll 1$,
+\begin{equation}
+  R_{r\varphi} = \alpha P = \alpha g_{\rm eff} \Sigma,
+\end{equation}
+where $g_{\rm eff}$ is effective surface gravity,
+that allows to express the braking torque acting on the layer as
+\begin{equation}
+T^- = A R R_{r\varphi} =  \alpha g_{\rm eff} M R,
+\end{equation}
+where $A$ is the surface area of the BL (projected onto the surface of the star), and $M$ and $R$ are its mass and radius. We will consider the radial dimentions of the layer as well as its latitudinal extent negligibly small (hence $R$ is equal to the radius of the star).
+Hence, angular momentum conservation including mass depletion and friction
+\begin{equation}\label{E:dJ}
+  \frac{dJ}{dt} = \dot{M}j - \frac{J}{t_{\rm depl}} - \alpha g_{\rm eff} M R,
+\end{equation}
+where $j \simeq \sqrt{GM_{\rm NS}R}$ is net angular momentum of the infalling matter. 
+
+Two equations (\ref{E:dM}) and (\ref{E:dJ}) are sufficient to describe the evolution of the physical parameters of the BL with time, given $\dot{M}(t)$ and initial conditions.
+In our framework, the energy released during accretion and dissipation does not affect the dynamics of the slab. However, luminosity is an important observable. Apart from the energy released in the disc,  two processes are responsible for energy dissipation, mass depletion (that should be accompanied by a corresponding loss in kinetic energy) and friction related to $T^-$.
+Some of the kinetic energy of the flow contributes to the spin up of the star, all the other converted to heat and contributes to luminosity. 
+\begin{equation}\label{E:Ltot}
+  L_{\rm BL} =\frac{d}{dt}\left( \frac{1}{2} MR^2 \Omega^2\right) -  \frac{d}{dt}\left( \frac{1}{2} I_{\rm NS} \Omega_{\rm NS}^2\right) \simeq 
+  \frac{M}{t_{\rm depl}} \left( \Omega^2 -\Omega_{\rm NS}^2\right) +  \left( \Omega - \Omega_{\rm NS}\right) T^- = \frac{1}{2} \frac{M}{t_{\rm depl}} \left( \Omega^2 -\Omega_{\rm NS}^2\right) + \alpha g_{\rm eff} MR \left( \Omega - \Omega_{\rm NS}\right).
+\end{equation}
+Here, we neglected the change in the moment of inertia of the NS, and set the geometry of the BL to a thin ring of radius $R$. 
+
+\subsection{Mass accretion rate}
+
+We consider to cases, one is approach to equilirbium with $\dot{M} = const$, and the other assumed that the mass accretion rate has a stochastic variability component with a power-law spectrum.
+In the former case, the system of equations approaches an equilibrium state with the BL mass of $M_{\rm eq} = \dot{M}t_{\rm depl}$. Equilibrium angular momentum is determined from (\ref{E:dJ}) that in a steady state becomes a quadratic equation for $J$. Finally, equilibrium angular momentum is found as
+\begin{equation}
+  J_{\rm eq} = \frac{1}{2}\dot{M} t_{\rm depl} j \left(  q \pm \sqrt{q^2 - 4q+4s}\right),
+\end{equation}
+where $q = \frac{R^2}{\alpha t_{\rm depl} j}\sim \left( \alpha t_{\rm depl}\right)^{-1} \sim 1$ and $s = GM\dot{M} t_{\rm depl} j^{-2} \ll 1$ are dimensionless constants. If $q-s > q^2/4$, the layer is slowed down until its rotation velocity equals that of the star.
+
+The second case assumed stochastic variability of the mass accretion rate, modelled using a white noize source convolved with a kernel corresponding to a power-law PDS with a random Fourier image phase.
+
+\section{Results}
+
+\subsection{Approach to the equilibrium solution}
+
+\subsection{Variable mass accretion rate}
+
+
+
+\bibliographystyle{mnras}
+\bibliography{mybib}                                              
+
+\end{document}

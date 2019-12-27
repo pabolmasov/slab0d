@@ -1,0 +1,186 @@
+from numpy import *
+from numpy.fft import *
+import matplotlib
+from pylab import *
+from scipy.interpolate import interp1d
+
+#Uncomment the following if you want to use LaTeX in figures
+rc('font',**{'family':'serif','serif':['Times']})
+rc('mathtext',fontset='cm')
+rc('mathtext',rm='stix')
+rc('text', usetex=True)
+# #add amsmath to the preamble
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+ioff()
+
+def spec(infile = 'slabout', nbins = 100, trange = [0.1,1e5], mocking = False, logbinning = True):
+    '''
+    makes spectra and cross-spectra out of the blslab output
+    '''
+    # infile has the form t -- mdot -- m -- lBL -- orot
+    
+    lines = np.loadtxt(infile+".dat")
+    t = lines[:,0] ; mdot = lines[:,1] ; m = lines[:,2] ; lBL = lines[:,3] ; orot = lines[:,4]
+
+    if(trange is not None):
+        w=np.where((t<trange[1])&(t>trange[0]))
+        t=t[w] ; mdot=mdot[w] ; m=m[w] ; lBL=lBL[w] ; orot=orot[w]
+
+    # mocking time shift:
+    if mocking:
+        mockmfun = interp1d(t, mdot, bounds_error =False, fill_value = 0.)
+        deltat = 1.
+        mockm = mockmfun(t-deltat)
+        lBL = mockm
+
+    nt = np.size(t) ;    tspan = t.max() - t.min() 
+    dt = tspan / np.double(nt)
+    #frequencies:
+    freq1 =1./tspan/2. ; freq2=freq1*np.double(nt)/2.
+    freq = np.fft.fftfreq(nt, dt)
+    
+    # Fourier images:
+    mdot_f=2.*fft(mdot-mdot.mean())/mdot.sum() 
+    m_f=2.*fft(m-m.mean())/m.sum()
+    lBL_f=2.*fft(lBL-lBL.mean())/lBL.sum()
+    orot_f = 2.*fft(orot-orot.mean())/orot.sum()
+
+    # PDS and cross-spectra:
+    mdot_pds = abs(mdot_f)**2
+    m_pds = abs(m_f)**2
+    lBL_pds = abs(lBL_f)**2
+    orot_pds = abs(orot_f)**2
+    mmdot_cross = mdot_f * conj(lBL_f)
+    phaselag = angle(mmdot_cross)
+    # mmdot_cc = ifft(mmdot_cross) # cross-correlation
+
+    # binning:
+    if(logbinning):
+        binfreq=(freq2/freq1)**((np.arange(nbins+1)/np.double(nbins)))*freq1
+    else:
+        binfreq=(freq2-freq1)*((np.arange(nbins+1)/np.double(nbins)))+freq1
+    binfreqc = (binfreq[1:]+binfreq[:-1])/2.
+    binfreqs = (binfreq[1:]-binfreq[:-1])/2.
+    
+    mdot_pdsbin = zeros(nbins)
+    lBL_pdsbin = zeros(nbins)
+    mdot_dpdsbin = zeros(nbins)
+    lBL_dpdsbin = zeros(nbins)
+    mmdot_crossbin = zeros(nbins, dtype = complex)
+    dmmdot_crossbin = zeros(nbins)
+    phaselag_bin = zeros(nbins)
+    dphaselag_bin = zeros(nbins)
+
+    npoints = zeros(nbins)
+    
+    for kb in arange(nbins):
+        freqrange=(freq>=binfreq[kb])&(freq<binfreq[kb+1])
+        npoints[kb] = freqrange.sum()
+        mdot_pdsbin[kb]=mdot_pds[freqrange].mean() 
+        lBL_pdsbin[kb]=lBL_pds[freqrange].mean() 
+        mdot_dpdsbin[kb]=mdot_pds[freqrange].std()
+        lBL_dpdsbin[kb]=lBL_pds[freqrange].std()
+        mmdot_crossbin[kb] = mmdot_cross[freqrange].mean()
+        dmmdot_crossbin[kb] = mmdot_cross[freqrange].std()
+        phaselag_bin[kb] = phaselag[freqrange].mean()
+        dphaselag_bin[kb] = phaselag[freqrange].std()
+        # /np.sqrt(np.double(freqrange.sum())-1.)
+    
+    w = npoints>=2.
+
+    # ASCII output:
+    fout = open(infile+'_sp.dat', 'w')
+    fout.write("# f1  f2  mdot dmdot  lBL dlBL  Re(cross) Im(cross) dcross npoints\n")
+    for k in arange(nbins):
+        fout.write(str(binfreq[k])+" "+str(binfreq[k+1])+" "
+                   +str(mdot_pdsbin[k])+" "+str(mdot_dpdsbin[k])+" "
+                   +str(lBL_pdsbin[k])+" "+str(lBL_dpdsbin[k])+" "
+                   +str(real(mmdot_crossbin[k]))+" "+str(imag(mmdot_crossbin[k]))+" "
+                   +str(dmmdot_crossbin[k])+" "+str(npoints[k])+"\n")
+    fout.close()
+    # graphic output:
+    clf()
+    # plot(freq, mdot_pds, 'k,')
+    # plot(freq, lBL_pds, 'r,')
+    errorbar(binfreqc[w], mdot_pdsbin[w], xerr = binfreqs[w], yerr = mdot_dpdsbin[w]/sqrt(npoints[w]-1.), fmt = 'ks')
+    errorbar(binfreqc[w], lBL_pdsbin[w], xerr = binfreqs[w], yerr = lBL_dpdsbin[w]/sqrt(npoints[w]-1.), fmt = 'rd')
+    # plot(freq[freq>0.], 1e-3/((freq[freq>0.]*1000.*4.92594e-06*1.5)**2+1.), 'g-')
+    xlim([1./tspan/2., freq.max()])
+    xscale('log') ; yscale('log')
+    xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
+    savefig('pdss.png')
+    savefig('pdss.eps')
+    clf()
+    errorbar(binfreqc[w], phaselag_bin[w], xerr = binfreqs[w], yerr = dphaselag_bin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
+    errorbar(binfreqc[w], angle(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/abs(mmdot_crossbin[w])/sqrt(npoints[w]-1.), fmt = 'g.')
+    plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
+    plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
+    xscale('log')
+    xlabel(r'$f$, Hz') ; ylabel(r'$\Delta \varphi$')
+    savefig('phaselag.png')
+    savefig('phaselag.eps')
+    close('all')
+    clf()
+    fig, ax = subplots(2,1)
+    # ax[0].errorbar(binfreqc[w], abs(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
+    # ax[0].set_xlabel(r'$f$, Hz') ;
+    ax[0].errorbar(binfreqc[w], angle(mmdot_crossbin[w]), xerr = binfreqs[w],
+                   yerr = dmmdot_crossbin[w]/abs(mmdot_crossbin[w])/sqrt(npoints[w]-1.), fmt = 'k.')
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi, 'r-')
+    ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
+    ax[1].errorbar(binfreqc[w], abs(mmdot_crossbin[w])/sqrt(mdot_pdsbin[w] * lBL_pdsbin[w]),
+                   xerr = binfreqs[w], yerr = dmmdot_crossbin[w] \
+                   / sqrt(mdot_pdsbin[w] * lBL_pdsbin[w])/sqrt(npoints[w]-1.), fmt = 'k.')
+    ax[1].set_xscale('log')
+    ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
+    savefig('coherence.png')
+    savefig('coherence.eps')
+    close('all')
+
+def dists(infile = 'slabout', trange = [0.1,1e4]):
+    # infile has the form t -- mdot -- m -- lBL -- orot
+    
+    lines = np.loadtxt(infile+".dat")
+    t = lines[:,0] ; mdot = lines[:,1] ; m = lines[:,2] ; lBL = lines[:,3] ; orot = lines[:,4]
+    if trange is not None:
+        w = (t<trange[1]) & (t> trange[0])
+        t = t[w]  ; mdot = mdot[w] ; m=m[w] ; lBL = lBL[w] ; orot = orot[w]
+    
+    nmdot, binsmdot = histogram(mdot, bins=30, density = False)
+    nlBL, binslBL = histogram(lBL, bins=30, density = False)
+
+    binsmdot_c = (binsmdot[1:]+binsmdot[:-1])/2.
+    binsmdot_s = (binsmdot[1:]-binsmdot[:-1])
+    binslBL_c = (binslBL[1:]+binslBL[:-1])/2.
+    binslBL_s = (binslBL[1:]-binslBL[:-1])
+   
+    dnmdot = sqrt(nmdot) ; dnlBL = sqrt(nlBL)
+    fmdot = nmdot/(binsmdot[1:]-binsmdot[:-1]) ;     flBL = nlBL/(binslBL[1:]-binslBL[:-1])
+    dfmdot = dnmdot/(binsmdot[1:]-binsmdot[:-1]) ;     dflBL = dnlBL/(binslBL[1:]-binslBL[:-1])
+
+    r=5.0
+
+    clf()
+    fig = figure()
+    errorbar(binslBL_c, flBL, xerr = binslBL_s/2., yerr = dflBL/sqrt(1.), fmt = 'k.')
+    errorbar(binsmdot_c/r, fmdot, xerr = binsmdot_s/2./r, yerr = dfmdot/sqrt(1.), fmt = 'g.')
+    xlabel(r'$L/L_{\rm Edd}$', fontsize=18) ; ylabel(r'dN/dL', fontsize=18)
+    xscale('log') ;    yscale('log')
+    xlim(binslBL_c.min(), (binsmdot_c/r).max())
+    tick_params(labelsize=14, length=6, width=1., which='major')
+    tick_params(labelsize=14, length=3, width=1., which='minor')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
+    savefig('dists.png')
+    savefig('dists.eps')
+    close('all')
+    
+ 

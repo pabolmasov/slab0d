@@ -1,0 +1,1329 @@
+% BiBTeX Sample Database
+
+@Preamble{ {\hyphenation{Post-Script Sprin-ger}}
+}
+
+@String{AW = {{Ad\-di\-son-Wes\-ley}}}
+@String{AW:adr = {Reading, Massachusetts}}
+@String{j-TUGboat = {TUGboat}}
+
+@ARTICLE{penna,
+   author = {{Penna}, R.~F. and {S\c{a}dowski}, A. and {McKinney}, J.~C.
+	},
+    title = "{Thin-disc theory with a non-zero-torque boundary condition and comparisons with simulations}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1110.6556},
+ primaryClass = "astro-ph.HE",
+ keywords = {accretion, accretion discs, black hole physics, gravitation, hydrodynamics, MHD},
+     year = 2012,
+    month = feb,
+   volume = 420,
+    pages = {684-698},
+      doi = {10.1111/j.1365-2966.2011.20084.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2012MNRAS.420..684P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{PT74,
+   author = {{Page}, D.~N. and {Thorne}, K.~S.},
+    title = "{Disk-Accretion onto a Black Hole. Time-Averaged Structure of Accretion Disk}",
+  journal = {\apj},
+     year = 1974,
+    month = jul,
+   volume = 191,
+    pages = {499-506},
+      doi = {10.1086/152990},
+   adsurl = {http://adsabs.harvard.edu/abs/1974ApJ...191..499P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@INPROCEEDINGS{NT73,
+   author = {{Novikov}, I.~D. and {Thorne}, K.~S.},
+    title = "{Astrophysics of black holes.}",
+booktitle = {Black Holes (Les Astres Occlus)},
+     year = 1973,
+   editor = {{Dewitt}, C. and {Dewitt}, B.~S.},
+    pages = {343-450},
+   adsurl = {http://adsabs.harvard.edu/abs/1973blho.conf..343N},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{thorne,
+   author = {{Thorne}, K.~S.},
+    title = "{Disk-Accretion onto a Black Hole. II. Evolution of the Hole}",
+  journal = {\apj},
+     year = 1974,
+    month = jul,
+   volume = 191,
+    pages = {507-520},
+      doi = {10.1086/152991},
+   adsurl = {http://adsabs.harvard.edu/abs/1974ApJ...191..507T},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{BZ77,
+   author = {{Blandford}, R.~D. and {Znajek}, R.~L.},
+    title = "{Electromagnetic extraction of energy from Kerr black holes}",
+  journal = {\mnras},
+ keywords = {BLACK HOLES (ASTRONOMY), ELECTROMAGNETIC FIELDS, ENERGY SOURCES, ROTATING MATTER, ACTIVE GALACTIC NUCLEI, ASTROPHYSICS, ELECTRON-POSITRON PAIRS, PAIR PRODUCTION},
+     year = 1977,
+    month = may,
+   volume = 179,
+    pages = {433-456},
+   adsurl = {http://adsabs.harvard.edu/abs/1977MNRAS.179..433B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{BP75,
+   author = {{Bardeen}, J.~M. and {Petterson}, J.~A.},
+    title = "{The Lense-Thirring Effect and Accretion Disks around Kerr Black Holes}",
+  journal = {\apjl},
+     year = 1975,
+    month = jan,
+   volume = 195,
+    pages = {L65},
+      doi = {10.1086/181711},
+   adsurl = {http://adsabs.harvard.edu/abs/1975ApJ...195L..65B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{abram80,
+   author = {{Abramowicz}, M.~A. and {Lasota}, J.~P.},
+    title = "{Spin-up of black holes by thick accretion disks}",
+  journal = {\actaa},
+ keywords = {ASTROPHYSICS, BLACK HOLES (ASTRONOMY), SPIN DYNAMICS, STELLAR MASS ACCRETION, ANGULAR MOMENTUM, CIRCULAR ORBITS},
+     year = 1980,
+   volume = 30,
+    pages = {35-39},
+   adsurl = {http://adsabs.harvard.edu/abs/1980AcA....30...35A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{SS73,
+   author = {{Shakura}, N.~I. and {Sunyaev}, R.~A.},
+    title = "{Black holes in binary systems. Observational appearance.}",
+  journal = {\aap},
+     year = 1973,
+   volume = 24,
+    pages = {337-355},
+   adsurl = {http://adsabs.harvard.edu/abs/1973A%26A....24..337S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{hyperborodov,
+   author = {{Chen}, W.-X. and {Beloborodov}, A.~M.},
+    title = "{Neutrino-cooled Accretion Disks around Spinning Black Holes}",
+  journal = {\apj},
+   eprint = {arXiv:astro-ph/0607145},
+ keywords = {Accretion, Accretion Disks, Dense Matter, Gamma Rays: Bursts},
+     year = 2007,
+    month = mar,
+   volume = 657,
+    pages = {383-399},
+      doi = {10.1086/508923},
+   adsurl = {http://adsabs.harvard.edu/abs/2007ApJ...657..383C},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{honma,
+   author = {{Honma}, F.},
+    title = "{Global Structure of Bimodal Accretion Disks around a Black Hole}",
+  journal = {\pasj},
+ keywords = {ACCRETION DISKS, STARS : BINARIES -, STARS : X-RAYS},
+     year = 1996,
+    month = feb,
+   volume = 48,
+    pages = {77-87},
+   adsurl = {http://adsabs.harvard.edu/abs/1996PASJ...48...77H},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{evaporation,
+   author = {{Meyer}, F. and {Liu}, B.~F. and {Meyer-Hofmeister}, E.},
+    title = "{Evaporation: The change from accretion via a thin disk to a coronal flow}",
+  journal = {\aap},
+   eprint = {arXiv:astro-ph/0007091},
+ keywords = {ACCRETION, ACCRETION DISKS, BLACK HOLE PHYSICS, X-RAYS: STARS, STARS: INDIVIDUAL: CYGNUS X-1, NOVA MUSCAE 1991, GALAXIES: NUCLEI},
+     year = 2000,
+    month = sep,
+   volume = 361,
+    pages = {175-188},
+   adsurl = {http://adsabs.harvard.edu/abs/2000A%26A...361..175M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{bardeen70,
+   author = {{Bardeen}, J.~M.},
+    title = "{Kerr Metric Black Holes}",
+  journal = {\nat},
+     year = 1970,
+    month = apr,
+   volume = 226,
+    pages = {64-65},
+      doi = {10.1038/226064a0},
+   adsurl = {http://adsabs.harvard.edu/abs/1970Natur.226...64B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{meyers00,
+   author = {{Meyer}, F. and {Liu}, B.~F. and {Meyer-Hofmeister}, E.},
+    title = "{Evaporation: The change from accretion via a thin disk to a coronal flow}",
+  journal = {\aap},
+   eprint = {arXiv:astro-ph/0007091},
+ keywords = {ACCRETION, ACCRETION DISKS, BLACK HOLE PHYSICS, X-RAYS: STARS, STARS: INDIVIDUAL: CYGNUS X-1, NOVA MUSCAE 1991, GALAXIES: NUCLEI},
+     year = 2000,
+    month = sep,
+   volume = 361,
+    pages = {175-188},
+   adsurl = {http://adsabs.harvard.edu/abs/2000A%26A...361..175M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{uzdensky,
+   author = {{Uzdensky}, D.~A.},
+    title = "{Force-Free Magnetosphere of an Accretion Disk-Black Hole System. II. Kerr Geometry}",
+  journal = {\apj},
+   eprint = {arXiv:astro-ph/0410715},
+ keywords = {Accretion, Accretion Disks, Black Hole Physics, Galaxies: Active, Magnetic Fields, Magnetohydrodynamics: MHD},
+     year = 2005,
+    month = feb,
+   volume = 620,
+    pages = {889-904},
+      doi = {10.1086/427180},
+   adsurl = {http://adsabs.harvard.edu/abs/2005ApJ...620..889U},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@BOOK{electrochandra,
+   author = {{Chandrasekhar}, S.},
+    title = "{Radiative transfer}",
+ keywords = {RADIATIVE TRANSFER, RADIATION, RADIATION SCATTERING},
+publisher = {New York: Dover, 1960},
+     year = 1960,
+   adsurl = {http://adsabs.harvard.edu/abs/1960ratr.book.....C},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{SSZ,
+   author = {{Shakura}, N.~I. and {Sunyaev}, R.~A. and {Zilitinkevich}, S.~S.
+	},
+    title = "{On the turbulent energy transport in accretion discs}",
+  journal = {\aap},
+ keywords = {BLACK HOLES (ASTRONOMY), STELLAR MASS ACCRETION, THERMAL ENERGY, TURBULENT HEAT TRANSFER, X RAY SOURCES, CONVECTION, RADIATION PRESSURE, THERMAL INSTABILITY},
+     year = 1978,
+    month = jan,
+   volume = 62,
+    pages = {179-187},
+   adsurl = {http://adsabs.harvard.edu/abs/1978A%26A....62..179S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{gammie04,
+   author = {{Gammie}, C.~F. and {Shapiro}, S.~L. and {McKinney}, J.~C.},
+    title = "{Black Hole Spin Evolution}",
+  journal = {\apj},
+   eprint = {arXiv:astro-ph/0310886},
+ keywords = {Accretion, Accretion Disks, Black Hole Physics, Methods: Numerical, Magnetohydrodynamics: MHD},
+     year = 2004,
+    month = feb,
+   volume = 602,
+    pages = {312-319},
+      doi = {10.1086/380996},
+   adsurl = {http://adsabs.harvard.edu/abs/2004ApJ...602..312G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{PGII,
+   author = {{Popham}, R. and {Gammie}, C.~F.},
+    title = "{Advection-dominated Accretion Flows in the Kerr Metric. II. Steady State Global Solutions}",
+  journal = {\apj},
+   eprint = {arXiv:astro-ph/9802321},
+ keywords = {ACCRETION, ACCRETION DISKS, BLACK HOLE PHYSICS, RELATIVITY},
+     year = 1998,
+    month = sep,
+   volume = 504,
+    pages = {419},
+      doi = {10.1086/306054},
+   adsurl = {http://adsabs.harvard.edu/abs/1998ApJ...504..419P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{PGI,
+   author = {{Gammie}, C.~F. and {Popham}, R.},
+    title = "{Advection-dominated Accretion Flows in the Kerr Metric. I. Basic Equations}",
+  journal = {\apj},
+   eprint = {arXiv:astro-ph/9705117},
+ keywords = {ACCRETION, ACCRETION DISKS, HYDRODYNAMICS, RELATIVITY},
+     year = 1998,
+    month = may,
+   volume = 498,
+    pages = {313},
+      doi = {10.1086/305521},
+   adsurl = {http://adsabs.harvard.edu/abs/1998ApJ...498..313G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{sadowski11,
+   author = {{S{\c a}dowski}, A. and {Bursa}, M. and {Abramowicz}, M. and 
+	{Klu{\'z}niak}, W. and {Lasota}, J.-P. and {Moderski}, R. and 
+	{Safarzadeh}, M.},
+    title = "{Spinning up black holes with super-critical accretion flows}",
+  journal = {\aap},
+archivePrefix = "arXiv",
+   eprint = {1102.2456},
+ primaryClass = "astro-ph.HE",
+ keywords = {black hole physics, accretion, accretion disks},
+     year = 2011,
+    month = aug,
+   volume = 532,
+      eid = {A41},
+    pages = {A41},
+      doi = {10.1051/0004-6361/201116702},
+   adsurl = {http://adsabs.harvard.edu/abs/2011A%26A...532A..41S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{li05,
+   author = {{Li}, L.-X. and {Zimmerman}, E.~R. and {Narayan}, R. and {McClintock}, J.~E.
+	},
+    title = "{Multitemperature Blackbody Spectrum of a Thin Accretion Disk around a Kerr Black Hole: Model Computations and Comparison with Observations}",
+  journal = {\apjs},
+   eprint = {arXiv:astro-ph/0411583},
+ keywords = {Accretion, Accretion Disks, Black Hole Physics, Radiation Mechanisms: Thermal, X-Rays: Binaries},
+     year = 2005,
+    month = apr,
+   volume = 157,
+    pages = {335-370},
+      doi = {10.1086/428089},
+   adsurl = {http://adsabs.harvard.edu/abs/2005ApJS..157..335L},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{mineo12,
+   author = {{Mineo}, S. and {Gilfanov}, M. and {Sunyaev}, R.},
+    title = "{X-ray emission from star-forming galaxies - I. High-mass X-ray binaries}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1105.4610},
+ primaryClass = "astro-ph.HE",
+ keywords = {stars: formation, galaxies: irregular, galaxies: spiral, galaxies: starburst, X-rays: binaries, X-rays: galaxies},
+     year = 2012,
+    month = jan,
+   volume = 419,
+    pages = {2095-2115},
+      doi = {10.1111/j.1365-2966.2011.19862.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2012MNRAS.419.2095M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{eddlimit,
+   author = {{Eddington}, A.~S.},
+    title = "{A limiting case in the theory of radiative equilibrium}",
+  journal = {\mnras},
+     year = 1925,
+    month = mar,
+   volume = 85,
+    pages = {408},
+   adsurl = {http://adsabs.harvard.edu/abs/1925MNRAS..85..408E},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{RH95,
+   author = {{Riffert}, H. and {Herold}, H.},
+    title = "{Relativistic Accretion Disk Structure Revisited}",
+  journal = {\apj},
+ keywords = {ACCRETION, ACCRETION DISKS, BLACK HOLE PHYSICS, RELATIVITY},
+     year = 1995,
+    month = sep,
+   volume = 450,
+    pages = {508},
+      doi = {10.1086/176161},
+   adsurl = {http://adsabs.harvard.edu/abs/1995ApJ...450..508R},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{pasj,
+   author = {{Abolmasov}, P. and {Karpov}, S. and {Kotani}, T.},
+    title = "{Optically Thick Outflows of Supercritical Accretion Discs: Radiative Diffusion Approach}",
+  journal = {\pasj},
+archivePrefix = "arXiv",
+   eprint = {0809.0917},
+ keywords = {accretion, accretion discs, Physical Data and Processes: diffusion, X-rays: individual (SS 433, ULXs)},
+     year = 2009,
+    month = feb,
+   volume = 61,
+    pages = {213-},
+      doi = {10.1093/pasj/61.2.213},
+   adsurl = {http://adsabs.harvard.edu/abs/2009PASJ...61..213A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{superlens,
+   author = {{Abolmasov}, P. and {Shakura}, N.~I.},
+    title = "{Microlensing evidence for super-Eddington disc accretion in quasars}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1208.1678},
+ primaryClass = "astro-ph.CO",
+ keywords = {accretion, accretion discs, gravitational lensing: micro, quasars: general.},
+     year = 2012,
+    month = dec,
+   volume = 427,
+    pages = {1867-1876},
+      doi = {10.1111/j.1365-2966.2012.21881.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2012MNRAS.427.1867A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{sadowski14,
+   author = {{Sadowski}, A. and {Narayan}, R. and {Tchekhovskoy}, A. and 
+	{Abarca}, D. and {Zhu}, Y. and {McKinney}, J.~C.},
+    title = "{Global simulations of axisymmetric radiative black hole accretion disks in general relativity with a sub-grid magnetic dynamo}",
+  journal = {ArXiv e-prints},
+archivePrefix = "arXiv",
+   eprint = {1407.4421},
+ primaryClass = "astro-ph.HE",
+ keywords = {Astrophysics - High Energy Astrophysical Phenomena},
+     year = 2014,
+    month = jul,
+   adsurl = {http://adsabs.harvard.edu/abs/2014arXiv1407.4421S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{poutanen,
+   author = {{Poutanen}, J. and {Lipunova}, G. and {Fabrika}, S. and {Butkevich}, A.~G. and 
+	{Abolmasov}, P.},
+    title = "{Supercritically accreting stellar mass black holes as ultraluminous X-ray sources}",
+  journal = {\mnras},
+   eprint = {astro-ph/0609274},
+ keywords = {accretion, accretion discs , black hole physics , X-rays: binaries , X-rays: galaxies},
+     year = 2007,
+    month = may,
+   volume = 377,
+    pages = {1187-1194},
+      doi = {10.1111/j.1365-2966.2007.11668.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2007MNRAS.377.1187P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{slim,
+   author = {{Sadowski}, A.},
+    title = "{Slim accretion disks around black holes}",
+  journal = {ArXiv e-prints},
+archivePrefix = "arXiv",
+   eprint = {1108.0396},
+ primaryClass = "astro-ph.HE",
+ keywords = {Astrophysics - High Energy Astrophysical Phenomena},
+     year = 2011,
+    month = aug,
+   adsurl = {http://adsabs.harvard.edu/abs/2011arXiv1108.0396S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{collin,
+   author = {{Collin}, S. and {Boisson}, C. and {Mouchet}, M. and {Dumont}, A.-M. and 
+	{Coup{\'e}}, S. and {Porquet}, D. and {Rokaki}, E.},
+    title = "{Are quasars accreting at super-Eddington rates?}",
+  journal = {\aap},
+   eprint = {astro-ph/0203439},
+ keywords = {quasars: general, accretion, accretion disks, galaxies: active},
+     year = 2002,
+    month = jun,
+   volume = 388,
+    pages = {771-786},
+      doi = {10.1051/0004-6361:20020550},
+   adsurl = {http://adsabs.harvard.edu/abs/2002A%26A...388..771C},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+@BOOK{winds,
+   author = {{Lamers}, H.~J.~G.~L.~M. and {Cassinelli}, J.~P.},
+    title = "{Introduction to Stellar Winds}",
+ publisher="{Cambridge, UK: Cambridge University Press}",
+     year = 1999,
+    month = jun,
+   adsurl = {http://adsabs.harvard.edu/abs/1999isw..book.....L},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{ALP,
+   author = {{Abramowicz}, M.~A. and {Lanza}, A. and {Percival}, M.~J.},
+    title = "{Accretion Disks around Kerr Black Holes: Vertical Equilibrium Revisited}",
+  journal = {\apj},
+ keywords = {Accretion, Accretion Disks, Black Hole Physics, Hydrodynamics, Relativity},
+     year = 1997,
+    month = apr,
+   volume = 479,
+    pages = {179-183},
+   adsurl = {http://adsabs.harvard.edu/abs/1997ApJ...479..179A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@BOOK{ST,
+   author = {{Shapiro}, S.~L. and {Teukolsky}, S.~A.},
+    title = "{Black Holes, White Dwarfs and Neutron Stars: The Physics of Compact Objects}",
+booktitle = {Black Holes, White Dwarfs and Neutron Stars: The Physics of Compact Objects, by Stuart L.~Shapiro, Saul A.~Teukolsky, pp.~672.~ISBN 0-471-87316-0.~Wiley-VCH , June 1986.},
+     year = 1986,
+    month = jun,
+   adsurl = {http://adsabs.harvard.edu/abs/1986bhwd.book.....S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{mortlock11,
+   author = {{Mortlock}, D.~J. and {Warren}, S.~J. and {Venemans}, B.~P. and 
+	{Patel}, M. and {Hewett}, P.~C. and {McMahon}, R.~G. and {Simpson}, C. and 
+	{Theuns}, T. and {Gonz{\'a}les-Solares}, E.~A. and {Adamson}, A. and 
+	{Dye}, S. and {Hambly}, N.~C. and {Hirst}, P. and {Irwin}, M.~J. and 
+	{Kuiper}, E. and {Lawrence}, A. and {R{\"o}ttgering}, H.~J.~A.
+	},
+    title = "{A luminous quasar at a redshift of z = 7.085}",
+  journal = {\nat},
+archivePrefix = "arXiv",
+   eprint = {1106.6088},
+ primaryClass = "astro-ph.CO",
+     year = 2011,
+    month = jun,
+   volume = 474,
+    pages = {616-619},
+      doi = {10.1038/nature10159},
+   adsurl = {http://adsabs.harvard.edu/abs/2011Natur.474..616M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{madau14,
+   author = {{Madau}, P. and {Haardt}, F. and {Dotti}, M.},
+    title = "{Super-critical Growth of Massive Black Holes from Stellar-mass Seeds}",
+  journal = {\apjl},
+archivePrefix = "arXiv",
+   eprint = {1402.6995},
+ primaryClass = "astro-ph.CO",
+ keywords = {accretion, accretion disks, black hole physics, cosmology: miscellaneous, galaxies: high-redshift },
+     year = 2014,
+    month = apr,
+   volume = 784,
+      eid = {L38},
+    pages = {L38},
+      doi = {10.1088/2041-8205/784/2/L38},
+   adsurl = {http://adsabs.harvard.edu/abs/2014ApJ...784L..38M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{floyd09,
+   author = {{Floyd}, D.~J.~E. and {Bate}, N.~F. and {Webster}, R.~L.},
+    title = "{The accretion disc in the quasar SDSS J0924+0219}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {0905.2651},
+ primaryClass = "astro-ph.HE",
+ keywords = {accretion, accretion discs , gravitational lensing , quasars: individual: SDSS J0924+0219},
+     year = 2009,
+    month = sep,
+   volume = 398,
+    pages = {233-239},
+      doi = {10.1111/j.1365-2966.2009.15045.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2009MNRAS.398..233F},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{blackburne12,
+   author = {{Blackburne}, J.~A. and {Pooley}, D. and {Rappaport}, S. and 
+	{Schechter}, P.~L.},
+    title = "{Sizes and Temperature Profiles of Quasar Accretion Disks from Chromatic Microlensing}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {1007.1665},
+ primaryClass = "astro-ph.CO",
+ keywords = {accretion, accretion disks, gravitational lensing: strong, quasars: general},
+     year = 2011,
+    month = mar,
+   volume = 729,
+      eid = {34},
+    pages = {34},
+      doi = {10.1088/0004-637X/729/1/34},
+   adsurl = {http://adsabs.harvard.edu/abs/2011ApJ...729...34B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{PopIII,
+   author = {{Bromm}, V. and {Larson}, R.~B.},
+    title = "{The First Stars}",
+  journal = {\araa},
+   eprint = {astro-ph/0311019},
+     year = 2004,
+    month = sep,
+   volume = 42,
+    pages = {79-118},
+      doi = {10.1146/annurev.astro.42.053102.134034},
+   adsurl = {http://adsabs.harvard.edu/abs/2004ARA%26A..42...79B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{greiner01,
+   author = {{Greiner}, J. and {Cuby}, J.~G. and {McCaughrean}, M.~J.},
+    title = "{An unusually massive stellar black hole in the Galaxy}",
+  journal = {\nat},
+   eprint = {astro-ph/0111538},
+     year = 2001,
+    month = nov,
+   volume = 414,
+    pages = {522-525},
+      doi = {10.1038/35107019},
+   adsurl = {http://adsabs.harvard.edu/abs/2001Natur.414..522G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{nedwright,
+   author = {{Wright}, E.~L.},
+    title = "{A Cosmology Calculator for the World Wide Web}",
+  journal = {\pasp},
+   eprint = {astro-ph/0609593},
+ keywords = {Cosmology: Miscellaneous, Methods: Miscellaneous},
+     year = 2006,
+    month = dec,
+   volume = 118,
+    pages = {1711-1715},
+      doi = {10.1086/510102},
+   adsurl = {http://adsabs.harvard.edu/abs/2006PASP..118.1711W},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{ULXs,
+   author = {{Swartz}, D.~A. and {Soria}, R. and {Tennant}, A.~F. and {Yukita}, M.
+	},
+    title = "{A Complete Sample of Ultraluminous X-ray Source Host Galaxies}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {1108.1372},
+ primaryClass = "astro-ph.HE",
+ keywords = {galaxies: general, surveys, X-rays: binaries, X-rays: galaxies, X-rays: general},
+     year = 2011,
+    month = nov,
+   volume = 741,
+      eid = {49},
+    pages = {49},
+      doi = {10.1088/0004-637X/741/1/49},
+   adsurl = {http://adsabs.harvard.edu/abs/2011ApJ...741...49S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{geokerr,
+   author = {{Dexter}, J. and {Agol}, E.},
+    title = "{A Fast New Public Code for Computing Photon Orbits in a Kerr Spacetime}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {0903.0620},
+ primaryClass = "astro-ph.HE",
+ keywords = {accretion, accretion disks, black hole physics, radiative transfer, relativity},
+     year = 2009,
+    month = may,
+   volume = 696,
+    pages = {1616-1629},
+      doi = {10.1088/0004-637X/696/2/1616},
+   adsurl = {http://adsabs.harvard.edu/abs/2009ApJ...696.1616D},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@BOOK{astega,
+   author = {{Abramowitz}, M. and {Stegun}, I.~A.},
+    title = "{Handbook of Mathematical Functions}",
+booktitle = {Handbook of Mathematical Functions, New York: Dover, 1972},
+     year = 1972,
+   adsurl = {http://adsabs.harvard.edu/abs/1972hmfw.book.....A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{chinese1,
+   author = {{Wang}, J.-M. and {Du}, P. and {Li}, Y.-R. and {Ho}, L.~C. and 
+	{Hu}, C. and {Bai}, J.-M.},
+    title = "{A New Approach to Constrain Black Hole Spins in Active Galaxies Using Optical Reverberation Mapping}",
+  journal = {\apjl},
+archivePrefix = "arXiv",
+   eprint = {1408.2341},
+ primaryClass = "astro-ph.HE",
+ keywords = {accretion, accretion disks, galaxies: active },
+     year = 2014,
+    month = sep,
+   volume = 792,
+      eid = {L13},
+    pages = {L13},
+      doi = {10.1088/2041-8205/792/1/L13},
+   adsurl = {http://adsabs.harvard.edu/abs/2014ApJ...792L..13W},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@BOOK{osterbrock,
+   author = {{Osterbrock}, D.~E. and {Ferland}, G.~J.},
+    title = "{Astrophysics of gaseous nebulae and active galactic nuclei}",
+ keywords = {GASEOUS NEBULAE, PHOTOIONIZATION, THERMAL EQUILIBRIUM, EMISSION SPECTRA, INTERSTELLAR DUST, H II REGIONS, PLANETARY NEBULAE, SUPERNOVA REMNANTS, ACTIVE GALACTIC NUCLEI},
+booktitle = {Astrophysics of gaseous nebulae and active galactic nuclei, 2nd.~ed.~by D.E.~Osterbrock and G.J.~Ferland.~Sausalito, CA: University Science Books, 2006},
+publisher={CA: University Science Books},
+     year = 2006,
+   adsurl = {http://adsabs.harvard.edu/abs/2006agna.book.....O},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{gaskell09,
+   author = {{Gaskell}, C.~M.},
+    title = "{What broad emission lines tell us about how active galactic nuclei work}",
+  journal = {\nar},
+archivePrefix = "arXiv",
+   eprint = {0908.0386},
+ primaryClass = "astro-ph.CO",
+     year = 2009,
+    month = jul,
+   volume = 53,
+    pages = {140-148},
+      doi = {10.1016/j.newar.2009.09.006},
+   adsurl = {http://adsabs.harvard.edu/abs/2009NewAR..53..140G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{park12,
+   author = {{Park}, D. and {Kelly}, B.~C. and {Woo}, J.-H. and {Treu}, T.
+	},
+    title = "{Recalibration of the Virial Factor and M $_{BH}$-{$\sigma$}$_{*}$ Relation for Local Active Galaxies}",
+  journal = {\apjs},
+archivePrefix = "arXiv",
+   eprint = {1209.3773},
+ primaryClass = "astro-ph.CO",
+ keywords = {black hole physics, galaxies: active, galaxies: nuclei, methods: statistical},
+     year = 2012,
+    month = nov,
+   volume = 203,
+      eid = {6},
+    pages = {6},
+      doi = {10.1088/0067-0049/203/1/6},
+   adsurl = {http://adsabs.harvard.edu/abs/2012ApJS..203....6P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{GG13,
+   author = {{Gaskell}, C.~M. and {Goosmann}, R.~W.},
+    title = "{Line Shifts, Broad-line Region Inflow, and the Feeding of Active Galactic Nuclei}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {0805.4258},
+ keywords = {accretion, accretion disks, black hole physics, galaxies: active, line: profiles, quasars: emission lines, scattering },
+     year = 2013,
+    month = may,
+   volume = 769,
+      eid = {30},
+    pages = {30},
+      doi = {10.1088/0004-637X/769/1/30},
+   adsurl = {http://adsabs.harvard.edu/abs/2013ApJ...769...30G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{superpaper,
+   author = {{Abolmasov}, P. and {Shakura}, N.~I.},
+    title = "{Microlensing evidence for super-Eddington disc accretion in quasars}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1208.1678},
+ keywords = {accretion, accretion discs, gravitational lensing: micro, quasars: general.},
+     year = 2012,
+    month = dec,
+   volume = 427,
+    pages = {1867-1876},
+      doi = {10.1111/j.1365-2966.2012.21881.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2012MNRAS.427.1867A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{supererratum,
+   author = {{Abolmasov}, P. and {Shakura}, N.~I.},
+    title = "{Erratum: Microlensing evidence for super-Eddington disc accretion in quasars}",
+  journal = {\mnras},
+ keywords = {errata, addenda, accretion, accretion discs, gravitational lensing: micro, quasars: general},
+     year = 2013,
+    month = sep,
+   volume = 434,
+    pages = {906-908},
+      doi = {10.1093/mnras/stt976},
+   adsurl = {http://adsabs.harvard.edu/abs/2013MNRAS.434..906A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{pds,
+   author = {{Nardini}, E. and {Reeves}, J.~N. and {Gofford}, J. and {Harrison}, F.~A. and 
+	{Risaliti}, G. and {Braito}, V. and {Costa}, M.~T. and {Matzeu}, G.~A. and 
+	{Walton}, D.~J. and {Behar}, E. and {Boggs}, S.~E. and {Christensen}, F.~E. and 
+	{Craig}, W.~W. and {Hailey}, C.~J. and {Matt}, G. and {Miller}, J.~M. and 
+	{O'Brien}, P.~T. and {Stern}, D. and {Turner}, T.~J. and 
+	{Ward}, M.~J.},
+    title = "{Black hole feedback in the luminous quasar PDS 456}",
+  journal = {Science},
+archivePrefix = "arXiv",
+   eprint = {1502.06636},
+     year = 2015,
+    month = feb,
+   volume = 347,
+    pages = {860-863},
+      doi = {10.1126/science.1259202},
+   adsurl = {http://adsabs.harvard.edu/abs/2015Sci...347..860N},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{BLRvert,
+   author = {{Kollatschny}, W. and {Zetzl}, M.},
+    title = "{Vertical broad-line region structure in nearby active galactic nuclei}",
+  journal = {\aap},
+archivePrefix = "arXiv",
+   eprint = {1308.1902},
+ primaryClass = "astro-ph.CO",
+ keywords = {accretion, accretion disks, line: profiles, galaxies: Seyfert, galaxies: active, galaxies: general, quasars: emission lines},
+     year = 2013,
+    month = oct,
+   volume = 558,
+      eid = {A26},
+    pages = {A26},
+      doi = {10.1051/0004-6361/201321685},
+   adsurl = {http://adsabs.harvard.edu/abs/2013A%26A...558A..26K},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{nests,
+   author = {{Mannucci}, F. and {Salvati}, M. and {Stanga}, R.~M.},
+    title = "{Line profile and variability data to probe the broad-line region geometry - Of disks and nests}",
+  journal = {\apj},
+ keywords = {Active Galactic Nuclei, Galactic Structure, Line Spectra, Seyfert Galaxies, Variability, Astronomical Models, Computational Astrophysics, Mathematical Models, Spectral Line Width, Transfer Functions},
+     year = 1992,
+    month = jul,
+   volume = 394,
+    pages = {98-103},
+      doi = {10.1086/171563},
+   adsurl = {http://adsabs.harvard.edu/abs/1992ApJ...394...98M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{doro12,
+   author = {{Doroshenko}, V.~T. and {Sergeev}, S.~G. and {Klimanov}, S.~A. and 
+	{Pronik}, V.~I. and {Efimov}, Y.~S.},
+    title = "{Broad-line region kinematics and black hole mass in Markarian 6}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1203.2084},
+ primaryClass = "astro-ph.CO",
+ keywords = {galaxies: active, galaxies: individual: Mrk 6, galaxies: nuclei, galaxies: Seyfert },
+     year = 2012,
+    month = oct,
+   volume = 426,
+    pages = {416-426},
+      doi = {10.1111/j.1365-2966.2012.20843.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2012MNRAS.426..416D},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{grier13,
+   author = {{Grier}, C.~J. and {Peterson}, B.~M. and {Horne}, K. and {Bentz}, M.~C. and 
+	{Pogge}, R.~W. and {Denney}, K.~D. and {De Rosa}, G. and {Martini}, P. and 
+	{Kochanek}, C.~S. and {Zu}, Y. and {Shappee}, B. and {Siverd}, R. and 
+	{Beatty}, T.~G. and {Sergeev}, S.~G. and {Kaspi}, S. and {Araya Salvo}, C. and 
+	{Bird}, J.~C. and {Bord}, D.~J. and {Borman}, G.~A. and {Che}, X. and 
+	{Chen}, C. and {Cohen}, S.~A. and {Dietrich}, M. and {Doroshenko}, V.~T. and 
+	{Efimov}, Y.~S. and {Free}, N. and {Ginsburg}, I. and {Henderson}, C.~B. and 
+	{King}, A.~L. and {Mogren}, K. and {Molina}, M. and {Mosquera}, A.~M. and 
+	{Nazarov}, S.~V. and {Okhmat}, D.~N. and {Pejcha}, O. and {Rafter}, S. and 
+	{Shields}, J.~C. and {Skowron}, J. and {Szczygiel}, D.~M. and 
+	{Valluri}, M. and {van Saders}, J.~L.},
+    title = "{The Structure of the Broad-line Region in Active Galactic Nuclei. I. Reconstructed Velocity-delay Maps}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {1210.2397},
+ primaryClass = "astro-ph.CO",
+ keywords = {galaxies: active, galaxies: nuclei, galaxies: Seyfert },
+     year = 2013,
+    month = feb,
+   volume = 764,
+      eid = {47},
+    pages = {47},
+      doi = {10.1088/0004-637X/764/1/47},
+   adsurl = {http://adsabs.harvard.edu/abs/2013ApJ...764...47G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{nenkova08,
+   author = {{Nenkova}, M. and {Sirocky}, M.~M. and {Ivezi{\'c}}, {\v Z}. and 
+	{Elitzur}, M.},
+    title = "{AGN Dusty Tori. I. Handling of Clumpy Media}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {0806.0511},
+ keywords = {ISM: Dust, Extinction, Galaxies: Active, Galaxies: Seyfert, Infrared: General, Galaxies: Quasars: General, Radiative Transfer},
+     year = 2008,
+    month = sep,
+   volume = 685,
+    pages = {147-159},
+      doi = {10.1086/590482},
+   adsurl = {http://adsabs.harvard.edu/abs/2008ApJ...685..147N},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{dust,
+   author = {{Draine}, B.~T.},
+    title = "{Interstellar Dust Grains}",
+  journal = {\araa},
+   eprint = {astro-ph/0304489},
+     year = 2003,
+   volume = 41,
+    pages = {241-289},
+      doi = {10.1146/annurev.astro.41.011802.094840},
+   adsurl = {http://adsabs.harvard.edu/abs/2003ARA%26A..41..241D},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{morgan10,
+   author = {{Morgan}, C.~W. and {Kochanek}, C.~S. and {Morgan}, N.~D. and 
+	{Falco}, E.~E.},
+    title = "{The Quasar Accretion Disk Size-Black Hole Mass Relation}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {0707.0305},
+ keywords = {accretion, accretion disks, dark matter, gravitational lensing: micro, gravitational lensing: strong, quasars: general},
+     year = 2010,
+    month = apr,
+   volume = 712,
+    pages = {1129-1136},
+      doi = {10.1088/0004-637X/712/2/1129},
+   adsurl = {http://adsabs.harvard.edu/abs/2010ApJ...712.1129M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{pooley07,
+   author = {{Pooley}, D. and {Blackburne}, J.~A. and {Rappaport}, S. and 
+	{Schechter}, P.~L.},
+    title = "{X-Ray and Optical Flux Ratio Anomalies in Quadruply Lensed Quasars. I. Zooming in on Quasar Emission Regions}",
+  journal = {\apj},
+   eprint = {astro-ph/0607655},
+ keywords = {Cosmology: Gravitational Lensing, Galaxies: Quasars: General},
+     year = 2007,
+    month = may,
+   volume = 661,
+    pages = {19-29},
+      doi = {10.1086/512115},
+   adsurl = {http://adsabs.harvard.edu/abs/2007ApJ...661...19P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{zking,
+   author = {{Zubovas}, K. and {King}, A.},
+    title = "{BAL QSOs and Extreme UFOs: The Eddington Connection}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {1304.1691},
+ primaryClass = "astro-ph.GA",
+ keywords = {accretion, accretion disks, black hole physics, galaxies: evolution, quasars: general },
+     year = 2013,
+    month = may,
+   volume = 769,
+      eid = {51},
+    pages = {51},
+      doi = {10.1088/0004-637X/769/1/51},
+   adsurl = {http://adsabs.harvard.edu/abs/2013ApJ...769...51Z},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{tombesi,
+   author = {{Tombesi}, F. and {Cappi}, M. and {Reeves}, J.~N. and {Nemmen}, R.~S. and 
+	{Braito}, V. and {Gaspari}, M. and {Reynolds}, C.~S.},
+    title = "{Unification of X-ray winds in Seyfert galaxies: from ultra-fast outflows to warm absorbers}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1212.4851},
+ primaryClass = "astro-ph.HE",
+ keywords = {accretion, accretion discs, black hole physics, galaxies: active, galaxies: Seyfert, X-rays: galaxies},
+     year = 2013,
+    month = apr,
+   volume = 430,
+    pages = {1102-1117},
+      doi = {10.1093/mnras/sts692},
+   adsurl = {http://adsabs.harvard.edu/abs/2013MNRAS.430.1102T},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{gaskell82,
+   author = {{Gaskell}, C.~M.},
+    title = "{A redshift difference between high and low ionization emission-line regions in QSOs - Evidence for radial motions}",
+  journal = {\apj},
+ keywords = {Emission Spectra, Quasars, Radio Galaxies, Red Shift, Seyfert Galaxies, Spectral Line Width, Absorption Spectra, Accretion Disks, Astronomical Models, Cosmic Dust, Gas Ionization, Radial Velocity, Spectrophotometry},
+     year = 1982,
+    month = dec,
+   volume = 263,
+    pages = {79-86},
+      doi = {10.1086/160481},
+   adsurl = {http://adsabs.harvard.edu/abs/1982ApJ...263...79G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{mortonson,
+   author = {{Mortonson}, M.~J. and {Schechter}, P.~L. and {Wambsganss}, J.
+	},
+    title = "{Size Is Everything: Universal Features of Quasar Microlensing with Extended Sources}",
+  journal = {\apj},
+   eprint = {astro-ph/0408195},
+ keywords = {Accretion, Accretion Disks, Cosmology: Gravitational Lensing, Galaxies: Quasars: General},
+     year = 2005,
+    month = aug,
+   volume = 628,
+    pages = {594-603},
+      doi = {10.1086/431195},
+   adsurl = {http://adsabs.harvard.edu/abs/2005ApJ...628..594M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{BLRmass,
+   author = {{Baldwin}, J.~A. and {Ferland}, G.~J. and {Korista}, K.~T. and 
+	{Hamann}, F. and {Dietrich}, M.},
+    title = "{The Mass of Quasar Broad Emission Line Regions}",
+  journal = {\apj},
+   eprint = {astro-ph/0209335},
+ keywords = {Galaxies: Active, Galaxies: Quasars: Emission Lines},
+     year = 2003,
+    month = jan,
+   volume = 582,
+    pages = {590-595},
+      doi = {10.1086/344788},
+   adsurl = {http://adsabs.harvard.edu/abs/2003ApJ...582..590B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{PR07,
+   author = {{Pounds}, K.~A. and {Reeves}, J.~N.},
+    title = "{Is the X-ray spectrum of the narrow emission line QSO PG1211+143 defined by its energetic outflow?}",
+  journal = {\mnras},
+   eprint = {astro-ph/0610112},
+ keywords = {galaxies: active, galaxies: individual: PG1211+143, quasars: general, galaxies: Seyfert, X-rays: galaxies},
+     year = 2007,
+    month = jan,
+   volume = 374,
+    pages = {823-831},
+      doi = {10.1111/j.1365-2966.2006.11170.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2007MNRAS.374..823P},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@INPROCEEDINGS{BLRD,
+   author = {{Dultzin-Hacyan}, D. and {Marziani}, P. and {Sulentic}, J.~W.
+	},
+    title = "{The Broad Line Region in Active Galactic Nuclei}",
+booktitle="{Astrophysical Plasmas: Codes, Models, and Observations}",
+     year = 2000,
+   series = {Revista Mexicana de Astronomia y Astrofisica, vol. 27},
+   volume = 9,
+   eprint = {astro-ph/0002096},
+   editor = {{Arthur}, S.~J. and {Brickhouse}, N.~S. and {Franco}, J.},
+    month = may,
+    pages = {308-315},
+   adsurl = {http://adsabs.harvard.edu/abs/2000RMxAC...9..308D},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{BLRBon,
+   author = {{Bon}, E. and {Gavrilovi{\'c}}, N. and {La Mura}, G. and {Popovi{\'c}}, L.~{\v C}.
+	},
+    title = "{Complex broad emission line profiles of AGN - Geometry of the broad line region}",
+  journal = {\nar},
+archivePrefix = "arXiv",
+   eprint = {0910.0991},
+ primaryClass = "astro-ph.HE",
+ keywords = {Active and peculiar galaxies and related systems, Quasars, active or peculiar galaxies objects and systems, Accretion and accretion disks, Galactic nuclei circumnuclear matter and bulges},
+     year = 2009,
+    month = jul,
+   volume = 53,
+    pages = {121-127},
+      doi = {10.1016/j.newar.2009.09.007},
+   adsurl = {http://adsabs.harvard.edu/abs/2009NewAR..53..121B},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{tadhunter,
+   author = {{Tadhunter}, C.},
+    title = "{An introduction to active galactic nuclei: Classification and unification}",
+  journal = {\nar},
+     year = 2008,
+    month = aug,
+   volume = 52,
+    pages = {227-239},
+      doi = {10.1016/j.newar.2008.06.004},
+   adsurl = {http://adsabs.harvard.edu/abs/2008NewAR..52..227T},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{tristram12,
+   author = {{Tristram}, K.~R.~W. and {Schartmann}, M. and {Burtscher}, L. and 
+	{Meisenheimer}, K. and {Jaffe}, W. and {Kishimoto}, M. and {H{\"o}nig}, S.~F. and 
+	{Weigelt}, G.},
+    title = "{The complexity of parsec-scaled dusty tori in AGN}",
+  journal = {Journal of Physics Conference Series},
+archivePrefix = "arXiv",
+   eprint = {1204.2823},
+ primaryClass = "astro-ph.CO",
+     year = 2012,
+    month = jul,
+   volume = 372,
+   number = 1,
+      eid = {012035},
+    pages = {012035},
+      doi = {10.1088/1742-6596/372/1/012035},
+   adsurl = {http://adsabs.harvard.edu/abs/2012JPhCS.372a2035T},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{WU02,
+   author = {{Woo}, J.-H. and {Urry}, C.~M.},
+    title = "{Active Galactic Nucleus Black Hole Masses and Bolometric Luminosities}",
+  journal = {\apj},
+   eprint = {astro-ph/0207249},
+ keywords = {Black Hole Physics, Galaxies: Active, Galaxies: Nuclei, Galaxies: Quasars: General},
+     year = 2002,
+    month = nov,
+   volume = 579,
+    pages = {530-544},
+      doi = {10.1086/342878},
+   adsurl = {http://adsabs.harvard.edu/abs/2002ApJ...579..530W},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{yan14,
+   author = {{Yan}, C.-S. and {Lu}, Y. and {Yu}, Q. and {Mao}, S. and {Wambsganss}, J.
+	},
+    title = "{Microlensing of Sub-parsec Massive Binary Black Holes in Lensed QSOs: Light Curves and Size-Wavelength Relation}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {1402.2504},
+ primaryClass = "astro-ph.CO",
+ keywords = {accretion, accretion disks, black hole physics, galaxies: formation, gravitational lensing: micro, quasars: general, relativistic processes },
+     year = 2014,
+    month = apr,
+   volume = 784,
+      eid = {100},
+    pages = {100},
+      doi = {10.1088/0004-637X/784/2/100},
+   adsurl = {http://adsabs.harvard.edu/abs/2014ApJ...784..100Y},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{negrete12,
+   author = {{Negrete}, C.~A. and {Dultzin}, D. and {Marziani}, P. and {Sulentic}, J.~W.
+	},
+    title = "{Broad-line Region Physical Conditions in Extreme Population A Quasars: A Method to Estimate Central Black Hole Mass at High Redshift}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {1107.3188},
+ primaryClass = "astro-ph.CO",
+ keywords = {quasars: general, quasars: individual: I Zw 1 SDSS J120144.36+011611.6},
+     year = 2012,
+    month = sep,
+   volume = 757,
+      eid = {62},
+    pages = {62},
+      doi = {10.1088/0004-637X/757/1/62},
+   adsurl = {http://adsabs.harvard.edu/abs/2012ApJ...757...62N},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{kaspi07,
+   author = {{Kaspi}, S. and {Brandt}, W.~N. and {Maoz}, D. and {Netzer}, H. and 
+	{Schneider}, D.~P. and {Shemmer}, O.},
+    title = "{Reverberation Mapping of High-Luminosity Quasars: First Results}",
+  journal = {\apj},
+   eprint = {astro-ph/0612722},
+ keywords = {Galaxies: Active, Galaxies: Nuclei, Galaxies: Seyfert, Galaxies: Quasars: General},
+     year = 2007,
+    month = apr,
+   volume = 659,
+    pages = {997-1007},
+      doi = {10.1086/512094},
+   adsurl = {http://adsabs.harvard.edu/abs/2007ApJ...659..997K},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{RPCI,
+   author = {{Stern}, J. and {Laor}, A. and {Baskin}, A.},
+    title = "{Radiation pressure confinement - I. Ionized gas in the ISM of AGN hosts}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1309.7825},
+ primaryClass = "astro-ph.CO",
+ keywords = {radiation mechanisms: general},
+     year = 2014,
+    month = feb,
+   volume = 438,
+    pages = {901-921},
+      doi = {10.1093/mnras/stt1843},
+   adsurl = {http://adsabs.harvard.edu/abs/2014MNRAS.438..901S},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+
+@ARTICLE{maiolino,
+   author = {{Maiolino}, R. and {Risaliti}, G. and {Salvati}, M. and {Pietrini}, P. and 
+	{Torricelli-Ciamponi}, G. and {Elvis}, M. and {Fabbiano}, G. and 
+	{Braito}, V. and {Reeves}, J.},
+    title = "{``Comets'' orbiting a black hole}",
+  journal = {\aap},
+archivePrefix = "arXiv",
+   eprint = {1005.3365},
+ primaryClass = "astro-ph.HE",
+ keywords = {galaxies: Seyfert, galaxies: nuclei, X-rays: galaxies},
+     year = 2010,
+    month = jul,
+   volume = 517,
+      eid = {A47},
+    pages = {A47},
+      doi = {10.1051/0004-6361/200913985},
+   adsurl = {http://adsabs.harvard.edu/abs/2010A%26A...517A..47M},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{KG00,
+   author = {{Korista}, K.~T. and {Goad}, M.~R.},
+    title = "{Locally Optimally Emitting Clouds and the Variable Broad Emission Line Spectrum of NGC 5548}",
+  journal = {\apj},
+   eprint = {astro-ph/0001399},
+ keywords = {Galaxies: Active, galaxies: individual (NGC 5548), Galaxies: Nuclei, Galaxies: Seyfert, Line: Formation},
+     year = 2000,
+    month = jun,
+   volume = 536,
+    pages = {284-298},
+      doi = {10.1086/308930},
+   adsurl = {http://adsabs.harvard.edu/abs/2000ApJ...536..284K},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{KG15,
+   author = {{Goad}, M.~R. and {Korista}, K.~T.},
+    title = "{Interpreting broad emission-line variations - II. Tensions between luminosity, characteristic size, and responsivity}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1508.02528},
+ keywords = {methods: numerical, galaxies: active, quasars: emission lines, galaxies: Seyfert},
+     year = 2015,
+    month = nov,
+   volume = 453,
+    pages = {3662-3684},
+      doi = {10.1093/mnras/stv1861},
+   adsurl = {http://adsabs.harvard.edu/abs/2015MNRAS.453.3662G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{lawrence12,
+   author = {{Lawrence}, A.},
+    title = "{The UV peak in active galactic nuclei: a false continuum from blurred reflection?}",
+  journal = {\mnras},
+archivePrefix = "arXiv",
+   eprint = {1110.0854},
+ keywords = {accretion, accretion discs, galaxies: active, quasars: emission lines},
+     year = 2012,
+    month = jun,
+   volume = 423,
+    pages = {451-463},
+      doi = {10.1111/j.1365-2966.2012.20889.x},
+   adsurl = {http://adsabs.harvard.edu/abs/2012MNRAS.423..451L},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{armitage,
+   author = {{Armitage}, P.~J.},
+    title = "{Physical processes in protoplanetary disks}",
+  journal = {ArXiv e-prints 1509.06382},
+archivePrefix = "arXiv",
+   eprint = {1509.06382},
+ primaryClass = "astro-ph.SR",
+ keywords = {Astrophysics - Solar and Stellar Astrophysics, Astrophysics - Earth and Planetary Astrophysics},
+     year = 2015,
+    month = sep,
+   adsurl = {http://adsabs.harvard.edu/abs/2015arXiv150906382A},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{GS98,
+   author = {{Grevesse}, N. and {Sauval}, A.~J.},
+    title = "{Standard Solar Composition}",
+  journal = {\ssr},
+ keywords = {Sun: abundances, Meteorites: abundances, Solar spectroscopy},
+     year = 1998,
+    month = may,
+   volume = 85,
+    pages = {161-174},
+      doi = {10.1023/A:1005161325181},
+   adsurl = {http://adsabs.harvard.edu/abs/1998SSRv...85..161G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{indriolo07,
+   author = {{Indriolo}, N. and {Geballe}, T.~R. and {Oka}, T. and {McCall}, B.~J.
+	},
+    title = "{H$^{+}$$_{3}$ in Diffuse Interstellar Clouds: A Tracer for the Cosmic-Ray Ionization Rate}",
+  journal = {\apj},
+archivePrefix = "arXiv",
+   eprint = {0709.1114},
+ keywords = {Astrochemistry, ISM: Cosmic Rays, ISM: Clouds, ISM: Molecules},
+     year = 2007,
+    month = dec,
+   volume = 671,
+    pages = {1736-1747},
+      doi = {10.1086/523036},
+   adsurl = {http://adsabs.harvard.edu/abs/2007ApJ...671.1736I},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@BOOK{lang,
+   author = {{Lang}, K.~R.},
+    title = "{Astrophysical Formulae. A Compendium for the Physicist and Astrophysicist.}",
+ keywords = {ASTROPHYSIK},
+booktitle = {Astrophysical Formulae.~ A Compendium for the Physicist and Astrophysicist, XXIX, 783 pp.~46 figs., 69 tabs..~ Springer-Verlag Berlin Heidelberg New York.~ Also Springer Study Edition},
+     year = 1980,
+publisher = {Springer-Verlag Berlin Heidelberg New York},
+    pages = {46},
+   adsurl = {http://adsabs.harvard.edu/abs/1980afcp.book.....L},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{lasota,
+   author = {{Lasota}, J.-P.},
+    title = "{The disc instability model of dwarf novae and low-mass X-ray binary transients}",
+  journal = {\nar},
+   eprint = {astro-ph/0102072},
+     year = 2001,
+    month = jun,
+   volume = 45,
+    pages = {449-508},
+      doi = {10.1016/S1387-6473(01)00112-9},
+   adsurl = {http://adsabs.harvard.edu/abs/2001NewAR..45..449L},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{hayashi,
+   author = {{Hayashi}, C.},
+    title = "{Structure of the Solar Nebula, Growth and Decay of Magnetic Fields and Effects of Magnetic and Turbulent Viscosities on the Nebula}",
+  journal = {Progress of Theoretical Physics Supplement},
+     year = 1981,
+   volume = 70,
+    pages = {35-53},
+      doi = {10.1143/PTPS.70.35},
+   adsurl = {http://adsabs.harvard.edu/abs/1981PThPS..70...35H},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+
+@ARTICLE{gammie,
+   author = {{Gammie}, C.~F.},
+    title = "{Layered Accretion in T Tauri Disks}",
+  journal = {\apj},
+ keywords = {ACCRETION, ACCRETION DISKS, STARS: MAGNETIC FIELDS, STARS: PRE-MAIN-SEQUENCE},
+     year = 1996,
+    month = jan,
+   volume = 457,
+    pages = {355},
+      doi = {10.1086/176735},
+   adsurl = {http://adsabs.harvard.edu/abs/1996ApJ...457..355G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
+

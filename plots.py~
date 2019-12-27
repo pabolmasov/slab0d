@@ -1,0 +1,78 @@
+from numpy import *
+import matplotlib
+from pylab import *
+
+#Uncomment the following if you want to use LaTeX in figures
+rc('font',**{'family':'serif','serif':['Times']})
+rc('mathtext',fontset='cm')
+rc('mathtext',rm='stix')
+rc('text', usetex=True)
+# #add amsmath to the preamble
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+ioff()
+
+def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin, npoints):
+
+    binfreqc = (binfreq[1:]+binfreq[:-1])/2.
+    binfreqs = (binfreq[1:]-binfreq[:-1])/2.    
+    w = npoints>=2.
+    
+    clf()
+    # plot(freq, mdot_pds, 'k,')
+    # plot(freq, lBL_pds, 'r,')
+    errorbar(binfreqc[w], mdot_pdsbin[w], xerr = binfreqs[w], yerr = mdot_dpdsbin[w]/sqrt(npoints[w]-1.), fmt = 'ks')
+    errorbar(binfreqc[w], lBL_pdsbin[w], xerr = binfreqs[w], yerr = lBL_dpdsbin[w]/sqrt(npoints[w]-1.), fmt = 'rd')
+    # plot(freq[freq>0.], 1e-3/((freq[freq>0.]*1000.*4.92594e-06*1.5)**2+1.), 'g-')
+    xlim([binfreqc.min()/2., binfreq.max()])
+    xscale('log') ; yscale('log')
+    xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
+    savefig('pdss.png')
+    savefig('pdss.eps')
+    close()
+    
+def phaselag(binfreq, phaselag_bin, dphaselag_bin, npoints):
+    binfreqc = (binfreq[1:]+binfreq[:-1])/2.
+    binfreqs = (binfreq[1:]-binfreq[:-1])/2.    
+    w = npoints>=2.
+    clf()
+    errorbar(binfreqc[w], phaselag_bin[w], xerr = binfreqs[w], yerr = dphaselag_bin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
+    errorbar(binfreqc[w], angle(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/abs(mmdot_crossbin[w])/sqrt(npoints[w]-1.), fmt = 'g.')
+    plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
+    plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
+    xscale('log')
+    xlabel(r'$f$, Hz') ; ylabel(r'$\Delta \varphi$')
+    savefig('phaselag.png')
+    savefig('phaselag.eps')
+    close()
+
+def coherence(binfreq, mmdot_crossbin, dmmdot_crossbin,
+              mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin,
+              npoints):
+    freq = binfreq
+    binfreqc = (binfreq[1:]+binfreq[:-1])/2.
+    binfreqs = (binfreq[1:]-binfreq[:-1])/2.    
+    w = npoints>=2.
+    clf()
+    fig, ax = subplots(2,1)
+    # ax[0].errorbar(binfreqc[w], abs(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
+    # ax[0].set_xlabel(r'$f$, Hz') ;
+    ax[0].errorbar(binfreqc[w], angle(mmdot_crossbin[w]), xerr = binfreqs[w],
+                   yerr = dmmdot_crossbin[w]/abs(mmdot_crossbin[w])/sqrt(npoints[w]-1.), fmt = 'k.')
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi, 'r-')
+    ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
+    ax[1].errorbar(binfreqc[w], abs(mmdot_crossbin[w])/sqrt(mdot_pdsbin[w] * lBL_pdsbin[w]),
+                   xerr = binfreqs[w], yerr = dmmdot_crossbin[w] \
+                   / sqrt(mdot_pdsbin[w] * lBL_pdsbin[w])/sqrt(npoints[w]-1.), fmt = 'k.')
+    ax[1].set_xscale('log')
+    ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
+    savefig('coherence.png')
+    savefig('coherence.eps')
+    close()

@@ -1,0 +1,162 @@
+\documentclass[useAMS,usenatbib,onecolumn,12pt]{mn2e}
+\pdfoutput=1
+
+%\usepackage{amsmath}
+\usepackage{mathtext,amssymb,amsmath}
+\usepackage{epsfig}
+\usepackage{graphics}
+% \usepackage{float}
+\usepackage[utf8x]{inputenc}
+\usepackage[english]{babel}
+
+% If your system does not have the AMS fonts version 2.0 installed, then
+% remove the useAMS option.
+%
+% useAMS allows you to obtain upright Greek characters.
+% e.g. \umu, \upi etc.  See the section on "Upright Greek characters" in
+% this guide for further information.
+%
+% If you are using AMS 2.0 fonts, bold math letters/symbols are available
+% at a larger range of sizes for NFSS release 1 and 2 (using \boldmath or
+% preferably \bmath).
+%
+% The usenatbib command allows the use of Patrick Daly's natbib.sty for
+% cross-referencing.
+%
+% If you wish to typeset the paper in Times font (if you do not have the
+% PostScript Type 1 Computer Modern fonts you will need to do this to get
+% smoother fonts in a PDF file) then uncomment the next line
+%\usepackage{Times}
+
+%%%%% AUTHORS - PLACE YOUR OWN MACROS HERE %%%%%
+
+\renewcommand{\vector}[1]{\ensuremath{\mathbf{#1}}}
+
+\newcommand{\nar}{New Astronomy Reviews}
+\newcommand{\araa}{ARA\&A}
+\newcommand{\pasj}{PASJ}
+\newcommand{\pasp}{PASP}
+\newcommand{\actaa}{AcA}
+\newcommand{\aap}{A\&A}
+\newcommand{\apj}{ApJ}
+\newcommand{\apjs}{ApJS}
+\newcommand{\apjl}{ApJL}
+\newcommand{\mnras}{MNRAS}
+\newcommand{\ssr}{SSRv}
+\newcommand{\nat}{Nature}
+\newcommand{\Mach}{\ensuremath{\mathcal{M}}}
+\newcommand{\rot}{\ensuremath{\mathbf{curl\,}}}
+\newcommand{\mdot}{\ensuremath{\dot{m}}}
+\newcommand{\Msun}{\ensuremath{\rm M_\odot}}
+\newcommand{\Msunyr}{\ensuremath{\rm M_\odot\, \rm yr^{-1}}}
+\newcommand{\ergl}{\ensuremath{\rm erg\, s^{-1}}}
+\newcommand{\Gyr}{\ensuremath{\rm Gyr}}
+\newcommand{\yr}{\ensuremath{\rm yr}}
+\newcommand{\pc}{\ensuremath{\rm pc}}
+\newcommand{\cmc}{\ensuremath{\rm cm^{-3}}}
+\newcommand{\cmsq}{\ensuremath{\rm cm^{-2}}}
+\newcommand{\Ry}{\ensuremath{\rm Ry}}
+\newcommand{\AAA}{\ensuremath{\rm \AA}}
+\newcommand{\acos}{\ensuremath{\rm acos}\,}
+\newcommand{\litwo}{\ensuremath{\rm Li}_2\,}
+\newcommand{\lithree}{\ensuremath{\rm Li}_3\,}
+\newcommand{\li}[2]{{\rm Li}_{#1}\!\left(#2\right)}
+\newcommand{\gf}{\ensuremath{\frac{\sqrt{g_{\varphi\varphi}}}{\alpha}}}
+\newcommand{\pardir}[2]{\ensuremath{\frac{\partial #2}{\partial #1} }}
+\newcommand{\eps}{\epsilon}
+
+\newcommand{\wftj}{WF1~J2026-4536}
+\newcommand{\grs}{GRS~1915+105}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title[Vector spin-up]{Gravitational wave torque and alignment [trending!]}
+\begin{document}
+
+\date{Accepted ---. Received ---; in
+  original form --- }
+
+\pagerange{\pageref{firstpage}--\pageref{lastpage}} \pubyear{2012}
+
+\maketitle
+
+\label{firstpage}
+
+\begin{abstract}
+\end{abstract}
+
+\begin{keywords}
+\end{keywords}
+
+% \section{Gravitational wave torque [trending!]}
+
+A newtron star with large enough polar caps possesses a variable
+ quadrupole momentum expressed as:
+\begin{equation}\label{E:GW:Dij}
+D_{ij} = 2\Delta M R_*^2 \left( 3k_i k_j - \delta_{ij}\right).
+\end{equation}
+For rotation rapid enough, contribution of gravitational wave emission
+to spin-down and alignment may become important. The general formula ((36.22)
+in \citet{MTW}) for the spin-down torque is
+\begin{equation}\label{E:GW:Ldot}
+\dot{L}_i = \dfrac{2}{5} \dfrac{G}{c^5} e_{ijk} \ddot{D}^j_l\dot{\ddot{D}}^{kl},
+\end{equation}
+where the sign differs for the sign given by \citet{MTW} because we consider
+the angular momentum of the neutron star not the momentum emitted. Upper and
+lower indices make no difference but facilitate bookkeeping. 
+
+Rotation proceeds around $\vector{\Omega}$ with the corresponding angular
+frequency, hence
+\begin{equation}
+\dot{\vector{k}}=-\left[ \vector{\Omega} \vector{k}\right]
+\end{equation}
+\begin{equation}
+\ddot{\vector{k}}=\left[ \vector{\Omega}\left[ \vector{\Omega} \vector{k}\right]\right],
+\end{equation}
+and the derivatives of $D_{ij}$ become
+\begin{equation}
+\dfrac{\dot{D}_{ij}}{6\Delta M R_*^2} = -\left[ \vector{\Omega}
+  \vector{k}\right]_i k_j - k_i \left[ \vector{\Omega}
+  \vector{k}\right]_j,
+\end{equation}
+\begin{equation}\label{E:GW:D2}
+\dfrac{\ddot{D}_{ij}}{6\Delta M R_*^2} = \left[ \vector{\Omega}
+  \vector{k}\right]_i \left[ \vector{\Omega} \vector{k}\right]_j
++\left(\vector{k}\vector{\Omega}\right) \left( k_i \Omega_j + \Omega_i
+k_j\right) - 2\Omega^2 k_i k_j,
+\end{equation}
+\begin{equation}\label{E:GW:D3}
+\dfrac{\dot{\ddot{D}}_{ij}}{6\Delta M R_*^2} = 3\Omega^2 \left( \left[ \vector{\Omega}
+  \vector{k}\right]_i k_j + k_i\left[ \vector{\Omega}
+  \vector{k}\right]_j\right) - 2\left(\vector{k}\vector{\Omega}\right) \left(
+\Omega_i \left[ \vector{\Omega} \vector{k}\right]_j + \left[ \vector{\Omega}
+  \vector{k}\right]_i \Omega_j\right).
+\end{equation}
+If we now substitute the above expressions to (\ref{E:GW:Ldot}), the result
+becomes
+\begin{equation}\label{E:GW:Ldotfin}
+\dot{L}_i = \dfrac{72}{5} \dfrac{G\Delta M^2 R_*^4 \Omega^5}{c^5} \left( -
+2\sin^2\chi \left(3+\cos^2\chi\right) \dfrac{\Omega_i}{\Omega} + 4 \cos \chi
+\sin^2\chi k_i \right).
+\end{equation}
+Expressed in the units of $(G\Msun/c^2)^2 {\rm s}^{-1}$, the torque per unit
+accreted mass may be re-written in the pulsar coordinates as
+\begin{equation}\label{E:GW:Lz}
+\dfrac{dL_z}{dM} = - 2N_{\rm GW}\sin^2\chi \left( 2+\sin^2\chi\right),
+\end{equation}
+\begin{equation}\label{E:GW:Lx}
+\dfrac{dL_x}{dM} = 4N_{\rm GW}\cos\chi\sin^3\chi,
+\end{equation}
+where 
+\begin{equation}\label{E:GW:L0}
+N_{\rm GW} \simeq 22 q^2 r_*^4 \Omega_1^5 {\rm\left( \dfrac{G\Msun}{c^2}\right)^2 s^{-1}}.
+\end{equation}
+Here, $z$ is direction along the rotation axis, $x$ is prependicular to
+$\vector{\Omega}$ in the plane containing $\vector{\Omega}$ and
+$\vector{k}$. Negative $dL_z / dM$ means spin-down, positive $dL_x / dM$ for
+$\chi<\pi/2$ means alignment. 
+
+\bibliographystyle{mn2e}
+\bibliography{mybib}                                              
+
+\end{document}

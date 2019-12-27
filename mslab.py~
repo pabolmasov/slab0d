@@ -1,0 +1,248 @@
+import matplotlib
+from matplotlib import rc
+from numpy import *
+from pylab import *
+from scipy.integrate import *
+from scipy.interpolate import interp1d
+from scipy.signal import *
+
+#Uncomment the following if you want to use LaTeX in figures
+rc('font',**{'family':'serif','serif':['Times']})
+rc('mathtext',fontset='cm')
+rc('mathtext',rm='stix')
+rc('text', usetex=True)
+# #add amsmath to the preamble
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+ioff()
+
+# for normal distribution fit:
+# import matplotlib.mlab as mlab
+# from scipy.stats import norm
+# for curve fitting:
+from scipy.optimize import curve_fit
+import os
+
+import noize
+import hdfoutput as hdf
+
+# GM = c = kappa = 1
+
+# dl/dt = mdot * j - alpha * geff * M * R * (omega > omegaNS)
+# dm/dt = mdot - alpha * geff * M^2/L * R * (omega > omegaNS)
+
+mNS = 1.5 # NS mass in Solar units
+r = 6./(mNS/1.5) # NS radius in GM/c**2 units
+alpha = 1e-5
+tdepl = 2e5 # depletion time in GM/c^3 units
+j = 0.9*sqrt(r)
+pspin = 0.003 # spin period
+tscale = 4.92594e-06 * mNS
+mscale = 6.41417e10 * mNS
+omegaNS = 2.*pi/pspin *tscale
+ifplot = False
+
+def onestep(m, l, mdot):
+    # one step
+    # input: mass, luminosity, mass accr. rate
+    # output: dm/dt, dl/dt, luminosity release, cos(theta) for the flow
+    omega = l /m /r**2
+    geff = maximum(1./r**2 - omega**2*r, 0.)
+    dl = mdot * j - l / tdepl - alpha * geff * m * r * sign(omega - omegaNS)
+    dm = mdot - m / tdepl
+    # alpha * geff * m**2/l * (omega > omegaNS)
+    #    a = alpha * m * r / omega * (omega-omegaNS)**2
+    lout = geff*alpha*m * r * abs(omega - omegaNS) + m/tdepl * (omega**2-omegaNS**2) * r**2 /2.
+    a = lout / geff
+    cth = a/(4.*pi*r**2)
+    
+    # (geff*a+l/tdepl/2.)*(omega-omegaNS)
+    if geff < 0:
+        print("geff = "+str(geff))
+        print("l="+str(l))
+        print("m="+str(m))
+        ii=input('m')
+    #    print(omegaNS)
+    return dm, dl, lout, cth
+
+
+def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout'):
+    '''
+    evolution of a layer spun up by a variable mass accretion rate. If nflick is set, it is the power-law index of the noize spectrum
+    if tbreak is set, it is the characteristic time scale for the spectral break
+if neither is set, mass accretion rate is assumed constant
+    '''
+    # initial conditions:
+    mdot = 1. * 4.*pi # Eddington units
+    dmdot =  0.5 # relative variation dispersion
+
+    efftimescale = (tdepl+1./alpha)
+    t = 0. ; dt = 0.1 ; tmax = 100.*efftimescale
+    tstore = 0.; dtout = 1e-3*efftimescale
+    dtdyn = r**1.5
+    #    tbreak = 100. * dtdyn 
+
+    m = mdot * tdepl*0.1
+    l = m*omegaNS*r**2    
+
+    for krepeat in arange(nrepeat):
+        # single run
+        tlist = [] ; mlist = [] ; llist = [] ; loutlist = [] ; clist = []
+        t = 0. ; tstore = 0.
+        # input noize
+        if (nflick is not None):
+            tint, mint = noize.flickgen(tmax, dtdyn, nslope = nflick)
+            mmean = mint.mean() ; mrms = mint.std()
+            mint = mdot * exp( (mint-mmean)/mrms * dmdot)
+        else:
+            if tbreak is not None:
+                tint, mint = noize.brown(tmax, dtdyn, tbreak)  # nslope = nflick)
+                mmean = mint.mean() ; mrms = mint.std()
+                mint = mdot * exp( (mint-mmean)/mrms * dmdot)
+        if(nflick is not None) or (tbreak is not None):
+            mconst = False
+            mfun = interp1d(tint, mint, bounds_error = False, fill_value=(mint[0], mint[-1]))
+        else:
+            mconst = True
+            meq = mdot * tdepl
+            q = r**2/alpha/tdepl/j
+            oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
+        # ASCII output
+        fout = open('slabout'+hdf.entryname(krepeat)+'.dat', 'w')
+        fout.write('# t  mdot m lout orot\n')
+        while(t<tmax):           
+            # halfstep:
+            dt = 1./(1000.*(mdot/m)+1000.*(mdot*j/l)+1./tdepl+1./dtout)
+            if mconst:
+                mdotcurrent = mdot
+                mdotcurrent1 = mdot
+            else:
+                mdotcurrent = mfun(t)
+                mdotcurrent1 = mfun(t+dt/2.)
+            dm, dl, lout, cth = onestep(m, l, mdotcurrent)
+            if isinf(dm+dl):
+                print("dm = "+str(dm))
+                print("dl = "+str(dl))
+                ii=input("ddl")
+            m1 = m+dm*dt/2. ; l1 = l + dl*dt/2. ; t1 = t+dt/2.
+            dm, dl, lout, cth = onestep(m1, l1, mdotcurrent1)
+            m += dm*dt ; l += dl*dt ; t +=dt
+
+            if(t>=tstore):
+                orot = l / m /r**2/tscale / 2. /pi
+                fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m*mscale)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
+                fout.flush()
+                tlist.append(t)
+                mlist.append(m)
+                llist.append(l)
+                loutlist.append(lout)
+                clist.append(cth)
+                # print(str(t)+" "+str(m)+" "+str(l)+"\n")
+                #                print("dt = "+str(dt))
+                tstore += dtout
+        fout.close()
+        tar = array(tlist, dtype = double) * tscale
+        mar = array(mlist, dtype = double) * mscale
+        orot = array(llist, dtype = double) / array(mlist, dtype = double) / r**2/tscale/2./pi
+        loutar = array(loutlist, dtype = double) / (4.*pi)
+        if mconst:
+            mdotar = zeros(size(tar)) + mdot
+            ldisc = zeros(size(tar)) + mdot / r / 2.
+        else:
+            mdotar = mfun(tar/tscale)
+            ldisc = mfun(tar/tscale)/r/2.
+        ldisc /= 8.*pi # half of potential energy
+        cthar = array(clist, dtype = double)
+        # HDF output
+        if krepeat <1:
+            hfile = hdf.init(hname, tar, mdot = mdot, alpha = alpha, tdepl = tdepl,
+                             nsims =nrepeat, nflick = nflick, tbreak = tbreak )
+            #        print(size(["mdot", "L", "M", "omega"]))
+            # ii=input("time")
+        hdf.dump(hfile, krepeat, ["mdot", "L", "M", "omega"],
+                 [mdotar, loutar, mar, orot])
+        if ifplot:
+            if mconst:            
+                # mass and momentum test
+                clf()
+                fig, ax = subplots(2,1)
+                ax[0].plot(tar, mar*0. + meq*mscale/1e17 , 'r-')
+                ax[0].plot(tar, mar/1e17, 'k-')
+                #            ax[0].set_xlabel(r'$t$, s', fontsize=18)
+                ax[0].set_ylabel(r'$M$, $10^{17}$g', fontsize=18)
+                ax[1].plot(tar, orot*0. + oeq/tscale/2./pi, 'r-')
+                ax[1].plot(tar, orot, 'k-')
+                ax[1].plot(tar, orot*0. + omegaNS/tscale/2./pi, 'b:')
+                ax[1].plot(tar, orot*0. + r**(-1.5)/tscale/2./pi, 'b:')
+                ax[1].set_xlabel(r'$t$, s', fontsize=18)
+                ax[1].set_ylabel(r'$f$, Hz', fontsize=18)
+                ax[0].set_xscale('log')
+                ax[1].set_xscale('log')
+                #            ax[0].set_xlim(0., efftimescale * 50.)
+                #            ax[1].set_xlim(0., efftimescale * 50.)
+                ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+                ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+                ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+                ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+                fig.set_size_inches(5, 6)
+                fig.tight_layout()
+                savefig('motest.png')
+                savefig('motest.eps')
+                close()
+            clf()
+            plot(tar, mar, 'k-')
+            if mconst:
+                plot(tar, mar*0. + meq*mscale , 'r-')
+                xlabel(r'$t$, s') ; ylabel(r'$M$, g')
+                savefig('mplot.png')
+            clf()
+            plot(tar, orot, 'k-')
+            #    plot(tar, orot*2.*cthar, 'k:')
+            plot(tar, orot*0. + omegaNS/tscale/2./pi, 'b:')
+            plot(tar, orot*0. + r**(-1.5)/tscale/2./pi, 'b:')
+            if mconst:
+                plot(tar, orot*0. + oeq/tscale/2./pi, 'r-')
+            xlabel(r'$t$, s') ; ylabel(r'$f$, Hz')
+            savefig('oplot.png')
+            savefig('oplot.eps')
+            fig = figure()
+            clf()
+            plot(tar, loutar+ldisc, 'k-')
+            plot(tar, ldisc, 'g-')
+            plot(tar, loutar, 'b-')
+            plot(tar, orot*0. + mdot/4./pi/r, 'r-')
+            plot(tar, orot*0. + mdot/8./pi/r, 'r:')
+            xlabel(r'$t$, s', fontsize=18) ; ylabel(r'$L/L_{\rm Edd}$', fontsize=18)
+            tick_params(labelsize=14, length=6, width=1., which='major')
+            tick_params(labelsize=14, length=4, width=1., which='minor')
+            ylim([(loutar+ldisc).min()*0.5, (loutar+ldisc).max()*2.])
+            yscale('log')
+            fig.set_size_inches(8, 4)
+            fig.tight_layout()
+            savefig('lplot.png')
+            savefig('lplot.eps')
+            clf()
+            plot(ldisc, loutar, 'k.')
+            plot(orot*0. + mdot/8./pi/r, loutar, 'r-')
+            plot(ldisc, orot*0. + mdot/8./pi/r, 'r-')
+            xlabel(r'$L_{\rm disc}/L_{\rm Edd}$') ; ylabel(r'$L_{\rm BL}/L_{\rm Edd}$')
+            ylim([(loutar+ldisc).min()*0.5, (loutar+ldisc).max()*2.])
+            #        yscale('log') ; xscale('log')
+            savefig('ls.png')
+            clf()
+            fig = figure()
+            plot(loutar+ldisc, orot, 'k,')
+            plot(loutar+ldisc, orot*2.*cthar, 'g,')
+            plot([(loutar+ldisc).min(), (loutar+ldisc).max()], [ omegaNS/tscale/2./pi,  omegaNS/tscale/2./pi], 'r-')
+            plot([(loutar+ldisc).min(), (loutar+ldisc).max()], [ r**(-1.5)/tscale/2./pi, r**(-1.5)/tscale/2./pi], 'r-')
+            plot(orot*0. + mdot/4./pi/r, orot*2.*cthar, 'r-')
+            xlabel(r'$L/L_{\rm Edd}$', fontsize=18) ; ylabel(r'$f$, Hz', fontsize=18)
+            xscale('log') # ; yscale('log')
+            ylim([(orot*cthar).min()*0.9, (orot).max()*1.1])
+            tick_params(labelsize=14, length=6, width=1., which='major')
+            tick_params(labelsize=14, length=4, width=1., which='minor')
+            fig.set_size_inches(5, 6)
+            fig.tight_layout()
+            savefig('lfreq.png')
+            savefig('lfreq.eps')
+            close('all')
+    hfile.close()

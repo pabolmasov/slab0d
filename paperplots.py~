@@ -1,0 +1,3 @@
+import mslab
+
+mslab.slab_evolution(nflick = 1., nrepeat=1000)
