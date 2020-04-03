@@ -1,6 +1,8 @@
 from numpy import *
+import numpy.ma as ma
 import matplotlib
 from pylab import *
+from matplotlib.colors import BoundaryNorm
 
 #Uncomment the following if you want to use LaTeX in figures
 rc('font',**{'family':'serif','serif':['Times']})
@@ -212,4 +214,49 @@ def coherence_doubled(freq1, freq2, cross, dcross1, dcross2, mdot_pds, lBL_pds):
     fig.tight_layout()
     savefig('coherence2.png')
     savefig('coherence2.eps')
+    close()
+
+def biplot(f, bc, bphi, outname = 'biplot'):
+
+    f2, g2 = meshgrid(f, f)
+
+    lbc = log10(bc)
+    #    lbc = bc
+    bcmin =  lbc[bc>0.].min() ; bcmax = lbc.max() ; nbc = 30
+    bclevs = (bcmax-bcmin)*(arange(nbc)/double(nbc))+bcmin
+    cmap = plt.get_cmap('hot')
+    bcnorm = BoundaryNorm(bclevs, ncolors=cmap.N, clip=True)
+
+    nphi = 30
+    philevs = 2.*pi*arange(nphi)/double(nphi)
+    phinorm = BoundaryNorm(philevs, ncolors=cmap.N, clip=True)
+
+    fmin=(f2[:-1,:-1])[bc >= 0.].min()    
+    fmax=(f2[:-1,:-1])[bc >= 0.].max()    
+
+    lbc_masked = ma.masked_array(lbc, mask = (bc<=0.))
+    bphi_masked = ma.masked_array(bphi, mask = (bc<=0.))
+    
+    clf()
+    fig, ax = subplots(1,2)
+    c0 = ax[0].pcolormesh(f2, g2, lbc_masked, norm = bcnorm, cmap = cmap)
+    colorbar(c0, ax=ax[0])
+    ax[0].set_xlabel(r'$f_1$, Hz', fontsize=18)
+    ax[0].set_ylabel(r'$f_2$, Hz', fontsize=18)
+    c1 = ax[1].pcolormesh(f2, g2, bphi_masked, norm = phinorm, cmap = cmap)
+    colorbar(c1, ax=ax[1])
+    ax[1].set_xlabel(r'$f_1$, Hz', fontsize=18)
+    ax[1].set_ylabel(r'$f_2$, Hz', fontsize=18)
+    ax[0].set_xscale('log') ; ax[0].set_yscale('log')
+    ax[1].set_xscale('log') ; ax[1].set_yscale('log')
+    ax[0].set_xlim(fmin, fmax)  ;  ax[1].set_xlim(fmin, fmax)
+    ax[0].set_ylim(fmin, fmax)  ;  ax[1].set_ylim(fmin, fmax)
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[0].set_title('bicoherence') ; ax[1].set_title('biphase')
+    fig.set_size_inches(10, 4)
+    fig.tight_layout()
+    savefig(outname+'.png')
     close()

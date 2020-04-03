@@ -52,15 +52,16 @@ def keyshow(filename):
     f.close()
     return keys
 
-def read(hname, nentry):
+def read(hname, nentry, entry = None):
     '''
     read a single entry from an HDF5
     '''
     hfile = h5py.File(hname, "r")
     glo=hfile["globals"]
-    entry = entryname(nentry)
+    if entry is None:
+        entry = "entry" + entryname(nentry)
     time=glo["time"][:]
-    data=hfile["entry"+entry]
+    data=hfile[entry]
 
     vals = data.keys()
     print(vals)
@@ -69,17 +70,20 @@ def read(hname, nentry):
         datalist.append(data[theval][:])
         #    hfile.close()
     return time, datalist
-
+    
 def vread(hname, valname = "mdot"):
     '''
     read particular variable from all the entries from an HDF5
+    global array t is read simultaneously
     '''
     hfile = h5py.File(hname+".hdf5", "r")
-    #    glo=hfile["globals"]
-    #    time=glo["time"][:]
+    glo=hfile["globals"]
+    time=glo["time"][:]
     keys = hfile.keys()
     #    print(keys)
-    datalist = []
+    nsim = glo.attrs['nsims'] ;  nt = size(time)
+    datarray = zeros([nsim, nt], dtype=double)
+    k=0
     
     for entry in keys:
         if(entry == "globals"):
@@ -88,8 +92,10 @@ def vread(hname, valname = "mdot"):
         else:
             data=hfile[entry]
             print(data.keys())
-            datalist.append(data[valname][:])
+            #            datalist.append(data[valname][:])
+            datarray[k,:] = data[valname][:]
+            k+=1
     hfile.close()
     print("size(t) = "+str(size(t)))
-    print("size(datalist[0]) = "+str(size(datalist[0])))
-    return t, datalist
+    print("shape(datarray) = "+str(shape(datarray)))
+    return t, datarray

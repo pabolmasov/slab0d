@@ -12,7 +12,6 @@ import os
 
 import noize
 import hdfoutput as hdf
-import plots
 
 # GM = c = kappa = 1
 
@@ -21,14 +20,16 @@ import plots
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-5
-tdepl = 2e5 # depletion time in GM/c^3 units
+alpha = 1e-4
+tdepl = 2e4 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
-pspin = 0.003 # spin period
+pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS
 mscale = 6.41417e10 * mNS
 omegaNS = 2.*pi/pspin *tscale
 ifplot = False
+if ifplot:
+    import plots
 
 def onestep(m, l, mdot):
     '''
@@ -74,8 +75,8 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
     dtdyn = r**1.5
     #    tbreak = 100. * dtdyn 
 
-    m = mdot * tdepl*0.1
-    l = m*omegaNS*r**2    
+    m = mdot * tdepl * 0.1 # starting mass, 10% from equilibrium
+    l = m*omegaNS*r**2   # starting angular momentum
 
     for krepeat in arange(nrepeat):
         # single run
@@ -83,7 +84,7 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
         # time, mass, angular momentum, total luminosity, thickness of the layer
         t = 0. ; tstore = 0.
         # input noize
-        # the highest frequency present in the noize is the local dynamical scale, anyway; inside the dynamical time scale, it is safe to interpolate
+        # the highest frequency present in the noise is the local dynamical scale, anyway; inside the dynamical time scale, it is safe to interpolate
         if (nflick is not None):
             tint, mint = noize.flickgen(tmax, dtdyn, nslope = nflick)
             mmean = mint.mean() ; mrms = mint.std()
@@ -101,7 +102,15 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
             q = r**2/alpha/tdepl/j
             oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
         # ASCII output
+        print("writing file number "+str(krepeat)+" of "+str(nrepeat)+"\n")
         fout = open('slabout'+hdf.entryname(krepeat)+'.dat', 'w')
+        fout.write('# parameters:')
+        fout.write('# mdot = '+str(mdot)+'\n')
+        fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
+        if (nflick is not None):
+            fout.write('# flickering with p = '+str(nflick)+'\n')
+        if (tbreak is not None):
+            fout.write('# brownian with tbreak = '+str(tbreak)+'\n')
         fout.write('# t  mdot m lout orot\n')
         while(t<tmax):           
             # halfstep:
@@ -157,5 +166,7 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
         if ifplot:
             if mconst:
                 plots.mconsttests(tar, mar, orot, meq, oeq)
-            plots.generalcurve(tar, mdot, mar, orot, cthar, loutar, ldisc)
+            else:
+                plots.generalcurve(tar, mdot, mar, orot, cthar, loutar, ldisc)
     hfile.close()
+
