@@ -14,6 +14,7 @@ matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"]
 ioff()
 
 from mslab import mscale, tscale, omegaNS, r
+from mslab import alpha, tdepl
 
 #################################################################################
 # for mslab:
@@ -149,9 +150,12 @@ def phaselag(binfreq, phaselag_bin, dphaselag_bin, mmdot_crossbin, npoints):
     savefig('phaselag.eps')
     close()
 
-def coherence(binfreq, mmdot_crossbin, dmmdot_crossbin,
-              mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin,
-              npoints):
+def coherence(binfreq, coherence, dcoherence, phaselag, dphaselag,
+              mdot_PDS, mdot_dPDS, orot_PDS, orot_dPDS,
+              npoints, outfile = 'cobin'):
+    # (binfreq, mmdot_crossbin, dmmdot_crossbin,
+    #              mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin,
+    #              npoints, outfile = 'coherence'):
     #!!! do we need PDS uncertainties?
     freq = binfreq
     binfreqc = (binfreq[1:]+binfreq[:-1])/2.
@@ -161,15 +165,17 @@ def coherence(binfreq, mmdot_crossbin, dmmdot_crossbin,
     fig, ax = subplots(2,1)
     # ax[0].errorbar(binfreqc[w], abs(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
     # ax[0].set_xlabel(r'$f$, Hz') ;
-    ax[0].errorbar(binfreqc[w], angle(mmdot_crossbin[w]), xerr = binfreqs[w],
-                   yerr = dmmdot_crossbin[w]/abs(mmdot_crossbin[w])/sqrt(npoints[w]-1.), fmt = 'k.')
+    ax[0].errorbar(binfreqc[w], phaselag, xerr = binfreqs[w],
+                   yerr = dphaselag, fmt = 'k.')
+    ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,2.*pi], 'g')
+    ax[0].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [0.,2.*pi], 'g--')
+    ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,2.*pi], 'g:')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi, 'r-')
     ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
-    ax[1].errorbar(binfreqc[w], abs(mmdot_crossbin[w])/sqrt(mdot_pdsbin[w] * lBL_pdsbin[w]),
-                   xerr = binfreqs[w], yerr = dmmdot_crossbin[w] \
-                   / sqrt(mdot_pdsbin[w] * lBL_pdsbin[w])/sqrt(npoints[w]-1.), fmt = 'k.')
+    ax[1].errorbar(binfreqc[w], coherence,
+                   xerr = binfreqs[w], yerr = dcoherence, fmt = 'k.')
     ax[1].set_xscale('log')
     ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
     ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
@@ -178,8 +184,8 @@ def coherence(binfreq, mmdot_crossbin, dmmdot_crossbin,
     ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
     fig.set_size_inches(5, 6)
     fig.tight_layout()
-    savefig('coherence.png')
-    savefig('coherence.eps')
+    savefig(outfile+'.png')
+    savefig(outfile+'.eps')
     close()
 
 def coherence_doubled(freq1, freq2, cross, dcross1, dcross2, mdot_pds, lBL_pds):

@@ -35,10 +35,11 @@ def viewcurve(infile):
     plot(log(mdot[0][:]), log(mdot[1][:]), '.k')
     savefig("sample_corr.png")
 
-def spec_sequential(infile = 'slabout', trange = [0.1, 1e10]):
+def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifplot = True, logbinning = False):
     '''
     makes spectra and cross-spectra out of the blslab output
     reads the entries one by one, thus avoiding memory issues
+    binning, if set, should be the number of frequency bins 
     '''
     keys = hdf.keyshow(infile+'.hdf5')
     nsims = size(keys)-1 # one key points to globals
@@ -50,7 +51,6 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10]):
             nt = size(t) ;  tspan = t.max() - t.min() 
             dt = tspan / np.double(nt)
             #frequencies:
-            freq1 =1./tspan/2. ; freq2=freq1*np.double(nt)/2.
             freq = np.fft.fftfreq(nt, dt)
             #            mdot = zeros([nsims, nt], dtype = double)
             #            L = zeros([nsims, nt], dtype = double)
@@ -124,7 +124,62 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10]):
     savefig('coherence.png')
     savefig('coherence.eps')
     close('all')
+    # binning:
+    if binning is not None:
+        nbins = binning
+        npoints = zeros(nbins, dtype = integer)
+        mdot_PDS_avbin = zeros(nbins) ; orot_PDS_avbin = zeros(nbins)
+        mdot_dpdsbin = zeros(nbins) ; orot_dpdsbin = zeros(nbins) # variation within the bin
+        mdot_PDS_stdbin = zeros(nbins) ; orot_PDS_stdbin = zeros(nbins) # mean uncertainty
+        coherence_avbin = zeros(nbins)
+        dcoherence_avbin = zeros(nbins) # variation within the bin
+        coherence_stdbin = zeros(nbins) # mean uncertainty
+        phaselag_avbin = zeros(nbins)
+        dphaselag_avbin = zeros(nbins) # variation within the bin
+        phaselag_stdbin = zeros(nbins) # mean uncertainty
         
+        print(str(nbins)+" bins\n")
+        freq1 =1./tspan/2. ; freq2=freq1*np.double(nt)/2.        
+        if(logbinning):
+            binfreq=(freq2/freq1)**((np.arange(nbins+1)/np.double(nbins)))*freq1
+        else:
+            binfreq=(freq2-freq1)*((np.arange(nbins+1)/np.double(nbins)))+freq1
+        for kb in arange(nbins):
+            freqrange=(freq>=binfreq[kb])&(freq<binfreq[kb+1])
+            npoints[kb] = freqrange.sum()
+            mdot_PDS_avbin[kb]=mdot_PDS_av[freqrange].mean() 
+            mdot_PDS_stdbin[kb]=mdot_PDS_std[freqrange].mean() 
+            mdot_dpdsbin[kb]=mdot_PDS_av[freqrange].std() / sqrt(double(npoints[kb]-1))
+            orot_PDS_avbin[kb]=orot_PDS_av[freqrange].mean() 
+            orot_PDS_stdbin[kb]=orot_PDS_std[freqrange].mean() 
+            orot_dpdsbin[kb]=orot_PDS_av[freqrange].std() / sqrt(double(npoints[kb]-1))
+            coherence_avbin[kb] = coherence[freqrange].mean() 
+            coherence_stdbin[kb] = dcoherence[freqrange].mean() 
+            dcoherence_avbin[kb] = coherence[freqrange].std() / sqrt(double(npoints[kb]-1))
+            phaselag_avbin[kb] = phaselag[freqrange].mean() 
+            phaselag_stdbin[kb] = dphaselag[freqrange].mean() 
+            dphaselag_avbin[kb] = phaselag[freqrange].std() / sqrt(double(npoints[kb]-1))
+            
+        # ASCII output:
+        fout = open(infile+'_sp.dat', 'w')
+        fout.write("# f1  f2  mdot dmdot d1mdot Omega dOmega d1Omega coherence dcoherence d1coherence  phaselag dphaselag d1phaselag npoints\n")
+        for k in arange(nbins):
+            fout.write(str(binfreq[k])+" "+str(binfreq[k+1])+" "
+                       +str(mdot_PDS_avbin[k])+" "+str(mdot_dpdsbin[k])+" "+str(mdot_PDS_stdbin[k])+" "
+                       +str(orot_PDS_avbin[k])+" "+str(orot_dpdsbin[k])+" "+str(orot_PDS_stdbin[k])+" "
+                       +str(coherence_avbin[k])+" "+str(dcoherence_avbin[k])+" "+str(coherence_stdbin[k])+" "
+                       +str(phaselag_avbin[k])+" "+str(dphaselag_avbin[k])+" "+str(phaselag_stdbin[k])+" "
+                       +str(npoints[k])+"\n")
+            fout.flush()
+        fout.close()
+        if ifplot:
+            plots.pds(binfreq, mdot_PDS_avbin, mdot_dpdsbin, orot_PDS_avbin, orot_dpdsbin, npoints)
+            #        plots.phaselag(binfreq, phaselag_bin, dphaselag_bin, npoints)
+            plots.coherence(binfreq, coherence_avbin, dcoherence_avbin, phaselag_avbin, dphaselag_avbin,
+                            mdot_PDS_avbin, mdot_dpdsbin, orot_PDS_avbin, orot_dpdsbin,
+                            npoints, outfile = 'cobin')
+
+    
 def spec_readall(infile = 'slabout', trange = [0.1,1e5]):
     '''
     makes spectra and cross-spectra out of the blslab output

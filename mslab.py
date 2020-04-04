@@ -20,14 +20,15 @@ import hdfoutput as hdf
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-4
-tdepl = 2e4 # depletion time in GM/c^3 units
+alpha = 1e-5
+tdepl = 1e3 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS
 mscale = 6.41417e10 * mNS
 omegaNS = 2.*pi/pspin *tscale
 ifplot = False
+ifasc = False
 if ifplot:
     import plots
 
@@ -56,7 +57,6 @@ def onestep(m, l, mdot):
     #    print(omegaNS)
     return dm, dl, lout, cth
 
-
 def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout'):
     '''
     evolution of a layer spun up by a variable mass accretion rate. 
@@ -69,9 +69,10 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
     mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
     dmdot =  0.5 # relative variation dispersion
 
-    efftimescale = (tdepl+1./alpha)
-    t = 0. ; dt = 0.1 ; tmax = 100.*efftimescale
-    tstore = 0.; dtout = 1e-3*efftimescale # this gives 10^5 data points
+    maxtimescale = (tdepl+1./alpha)
+    mintimescale = 1./(1./tdepl+alpha)
+    t = 0. ; dt = 0.1 ; tmax = 10.*maxtimescale
+    tstore = 0.; dtout = minimum(1.,1e-2*mintimescale) # this gives 10^5 data points
     dtdyn = r**1.5
     #    tbreak = 100. * dtdyn 
 
@@ -101,20 +102,21 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
             meq = mdot * tdepl
             q = r**2/alpha/tdepl/j
             oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
-        # ASCII output
-        print("writing file number "+str(krepeat)+" of "+str(nrepeat)+"\n")
-        fout = open('slabout'+hdf.entryname(krepeat)+'.dat', 'w')
-        fout.write('# parameters:')
-        fout.write('# mdot = '+str(mdot)+'\n')
-        fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
-        if (nflick is not None):
-            fout.write('# flickering with p = '+str(nflick)+'\n')
-        if (tbreak is not None):
-            fout.write('# brownian with tbreak = '+str(tbreak)+'\n')
-        fout.write('# t  mdot m lout orot\n')
+        if ifasc:
+            # ASCII output
+            print("writing file number "+str(krepeat)+" of "+str(nrepeat)+"\n")
+            fout = open('slabout'+hdf.entryname(krepeat)+'.dat', 'w')
+            fout.write('# parameters:')
+            fout.write('# mdot = '+str(mdot)+'\n')
+            fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
+            if (nflick is not None):
+                fout.write('# flickering with p = '+str(nflick)+'\n')
+            if (tbreak is not None):
+                fout.write('# brownian with tbreak = '+str(tbreak)+'\n')
+            fout.write('# t  mdot m lout orot\n')
         while(t<tmax):           
             # halfstep:
-            dt = 1./(1000.*(mdot/m)+1000.*(mdot*j/l)+1./tdepl+1./dtout)
+            dt = 1./(100.*(mdot/m)+100.*(mdot*j/l)+1./tdepl+1./dtout)
             if mconst:
                 mdotcurrent = mdot
                 mdotcurrent1 = mdot
@@ -132,17 +134,19 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
 
             if(t>=tstore):
                 orot = l / m /r**2/tscale / 2. /pi
-                fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m*mscale)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
-                fout.flush()
+                if ifasc:
+                    fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m*mscale)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
+                    fout.flush()
                 tlist.append(t)
                 mlist.append(m)
                 llist.append(l)
                 loutlist.append(lout)
                 clist.append(cth)
-                # print(str(t)+" "+str(m)+" "+str(l)+"\n")
+                #   print(str(t)+" "+str(m)+" "+str(l)+"\n")
                 #                print("dt = "+str(dt))
                 tstore += dtout
-        fout.close()
+        if ifasc:
+            fout.close()
         tar = array(tlist, dtype = double) * tscale
         mar = array(mlist, dtype = double) * mscale
         orot = array(llist, dtype = double) / array(mlist, dtype = double) / r**2/tscale/2./pi
@@ -167,6 +171,9 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
             if mconst:
                 plots.mconsttests(tar, mar, orot, meq, oeq)
             else:
-                plots.generalcurve(tar, mdot, mar, orot, cthar, loutar, ldisc)
+                print("plotting\n")
+                w=(tar > (0.9*tmax * tscale))
+                print(w.sum())
+                plots.generalcurve(tar[w], mdotar[w], mar[w], orot[w], cthar[w], loutar[w], ldisc[w])
     hfile.close()
 
