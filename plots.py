@@ -3,6 +3,7 @@ import numpy.ma as ma
 import matplotlib
 from pylab import *
 from matplotlib.colors import BoundaryNorm
+from matplotlib import interactive, use
 
 #Uncomment the following if you want to use LaTeX in figures
 rc('font',**{'family':'serif','serif':['Times']})
@@ -12,6 +13,7 @@ rc('text', usetex=True)
 # #add amsmath to the preamble
 matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 ioff()
+use('Agg')
 
 from mslab import mscale, tscale, omegaNS, r
 from mslab import alpha, tdepl
@@ -100,7 +102,7 @@ def generalcurve(tar, mdot, mar, orot, cthar, loutar, ldisc):
 ####################################################################################
 # for timing:
 
-def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin, npoints):
+def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin, npoints, outfile = 'pdss'):
 
     binfreqc = (binfreq[1:]+binfreq[:-1])/2.
     binfreqs = (binfreq[1:]-binfreq[:-1])/2.    
@@ -115,8 +117,8 @@ def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin, npoints):
     xlim([binfreqc.min()/2., binfreq.max()])
     xscale('log') ; yscale('log')
     xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
-    savefig('pdss.png')
-    savefig('pdss.eps')
+    savefig(outfile + '.png')
+    savefig(outfile + '.eps')
     close()
 
 def pds_doubled(freq1, freq2, mdot_pdsbin, mdot_dpdsbin1,  mdot_dpdsbin2, lBL_pdsbin, lBL_dpdsbin1, lBL_dpdsbin2, npoints):
@@ -165,15 +167,20 @@ def coherence(binfreq, coherence, dcoherence, phaselag, dphaselag,
     fig, ax = subplots(2,1)
     # ax[0].errorbar(binfreqc[w], abs(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
     # ax[0].set_xlabel(r'$f$, Hz') ;
-    ax[0].errorbar(binfreqc[w], phaselag, xerr = binfreqs[w],
-                   yerr = dphaselag, fmt = 'k.')
-    ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,2.*pi], 'g')
-    ax[0].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [0.,2.*pi], 'g--')
-    ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,2.*pi], 'g:')
+    ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [-pi,pi], 'g')
+    ax[0].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [-pi,pi], 'g--')
+    ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [-pi,pi], 'g:')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi, 'r-')
-    ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi/2., 'r-')
+    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi, 'r-')
+    ax[0].errorbar(binfreqc[w], phaselag, xerr = binfreqs[w],
+                   yerr = dphaselag, fmt = 'k.')
+    ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18) ; ax[0].set_ylim(-pi,pi)
+    ax[1].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,1.], 'g')
+    ax[1].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [0.,1.], 'g--')
+    ax[1].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,1.], 'g:')
     ax[1].errorbar(binfreqc[w], coherence,
                    xerr = binfreqs[w], yerr = dcoherence, fmt = 'k.')
     ax[1].set_xscale('log')

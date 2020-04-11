@@ -2,10 +2,13 @@ from numpy import *
 from numpy.fft import *
 import matplotlib
 from pylab import *
+from matplotlib import interactive, use
 from scipy.interpolate import interp1d
+from scipy.optimize import root_scalar
 
 import hdfoutput as hdf
 import plots as plots
+from mslab import r
 
 #Uncomment the following if you want to use LaTeX in figures
 rc('font',**{'family':'serif','serif':['Times']})
@@ -15,151 +18,233 @@ rc('text', usetex=True)
 # #add amsmath to the preamble
 matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
 ioff()
+use('Agg')
 
-def viewcurve(infile):
-    t, mdot = hdf.vread(infile, valname = "mdot")
-    t, lBL = hdf.vread(infile, valname = "L")
+def Cfun(x, f1, f2, rhs):
+    return (f1-x)*log(abs((f2-x)/(f1-x)))+x - rhs
+
+def Bfun(x, rhs):
+    '''
+    (exp(x)-1)/x = y solve for x
+    '''
+    return (exp(x)-1.)/x-rhs
+
+def logABC(x, frange, rhs):
+    '''
+    makes a modified logarithmic mesh f = A exp(Bx)+C, where x is uniformly spaced between 0 and 1
+    '''
+    # finding C:
+    #   brhs = (frange[1]-frange[0])/rhs
+    sol = root_scalar(Bfun, args = (1./rhs), rtol = 1e-5, x0 = -log(rhs), x1 = -log(rhs*abs(log(rhs))))
+    print(sol)
+    print("basic B = "+str(log(frange[1]/frange[0])))
+    print("basic A = "+str(frange[0]))
+    bcoef = sol.root
+    acoef = rhs/bcoef * (frange[1]-frange[0])
+    ccoef = frange[0] - acoef
+    print("acoef = "+str(acoef))
+    print("bcoef = "+str(bcoef))
+    print("ccoef = "+str(ccoef))
+    
+    return acoef * exp( bcoef * x) + ccoef
+
+def viewcurve(infile, nentry):
+    trange = [1., 10.]
+    t, datalist = hdf.read(infile, nentry)
+    w = (t>trange[0]) & (t<trange[1])
+    L, M, mdot, omega = datalist
     niter = shape(mdot)[0] ; nt = size(t)
     clf()
-    for k in arange(niter):
-        plot(t, mdot[k][:])
-    xlabel('$t$, s') ; ylabel('$\dot{M}c^2/L_{\rm Edd}$')
-    yscale('log') ; xlim(0,1)
-    savefig(infile+"_mdot.png")
+    scatter(mdot, omega * r**1.5, c=t, s=1.)
+    xlabel(r'$\dot{m}$') ; ylabel(r'$\Omega/\Omega_{\rm K}$')
+    xlim(mdot[w].min(), mdot[w].max()) ; ylim(omega[w].min() * r**1.5, omega[w].max() * r**1.5)
+    savefig(infile+"_O.png")
+    Ldisc = mdot/r/8./pi
     clf()
-    for k in arange(niter):
-        plot(t, lBL[k][:])
-    xlabel('$t$, s') ; ylabel('$\dot{L}/L_{\rm Edd}$')
+    fig = figure()
+    plot(t, L, 'k-')
+    plot(t, Ldisc, 'r:')
+    xlabel(r'$t$, s') ; ylabel(r'$\dot{L}/L_{\rm Edd}$') ; xlim(trange[0],trange[1]) ; ylim(minimum(L,Ldisc)[w].min(), maximum(L, Ldisc)[w].max())
+    fig.set_size_inches(10, 3)
     savefig(infile+"_lBL.png")
     close("all")
-    plot(log(mdot[0][:]), log(mdot[1][:]), '.k')
-    savefig("sample_corr.png")
 
-def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifplot = True, logbinning = False):
+def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifplot = True, logbinning = False, simfilter = None, cotest = False):
     '''
     makes spectra and cross-spectra out of the blslab output
     reads the entries one by one, thus avoiding memory issues
     binning, if set, should be the number of frequency bins 
+    simfilter = [N1, N2]  sets the number range of the files used in the simulation
+    cotest (boolean) is used to test the correct work of the covariance analysis
     '''
     keys = hdf.keyshow(infile+'.hdf5')
     nsims = size(keys)-1 # one key points to globals
 
+    if simfilter is not None:
+        keys = keys[simfilter[0]:simfilter[1]]
+        nsims  = size(keys)-1
+    
     for k in arange(nsims):
         t, datalist = hdf.read(infile+'.hdf5', 0, entry = keys[k])
         L, M, mdot, orot = datalist
         if k == 0:
             nt = size(t) ;  tspan = t.max() - t.min() 
             dt = tspan / np.double(nt)
+            print("dt = "+str(dt)+"\n")
             #frequencies:
-            freq = np.fft.fftfreq(nt, dt)
-            #            mdot = zeros([nsims, nt], dtype = double)
-            #            L = zeros([nsims, nt], dtype = double)
-            #    orot = zeros([nsims, nt], dtype = double)
-            mdot_PDS_av = zeros(nt, dtype = double)
-            mdot_PDS_std = zeros(nt, dtype = double)
-            orot_PDS_av = zeros(nt, dtype = double)
-            orot_PDS_std = zeros(nt, dtype = double)
-            cross_av = zeros(nt, dtype = complex)
-            dcross_im = zeros(nt, dtype = complex)
-            dcross_re = zeros(nt, dtype = complex)
-        #        mdot_av += mdot ; orot_av += orot
-        #        mdot_std += mdot**2 ; orot_std += orot**2
+            freq = np.fft.rfftfreq(nt, d=dt)
+            print("no of freqs = "+str(size(freq)))
+            print("nt = "+str(nt))
+            nf = size(freq)
+            mdot_PDS_av = zeros(nf, dtype = double)
+            mdot_PDS_std = zeros(nf, dtype = double)
+            orot_PDS_av = zeros(nf, dtype = double)
+            orot_PDS_std = zeros(nf, dtype = double)
+            l_PDS_av = zeros(nf, dtype = double)
+            l_PDS_std = zeros(nf, dtype = double)
+            o_cross_av = zeros(nf, dtype = complex)
+            o_dcross_im = zeros(nf, dtype = double)
+            o_dcross_re = zeros(nf, dtype = double)
+            l_cross_av = zeros(nf, dtype = complex)
+            l_dcross_im = zeros(nf, dtype = double)
+            l_dcross_re = zeros(nf, dtype = double)
         # Fourier images
-        mdot_f=2.*fft(mdot-mdot.mean())/mdot.sum()  # last axis is the FFT by default
+        mdot_f=2.*rfft(mdot-mdot.mean())/mdot.sum()  # last axis is the FFT by default
         #        lBL_f=2.*fft(lBL_demean)/lBL.sum()
-        orot_f = 2.*fft(orot-orot.mean())/orot.sum()
-        cross = mdot_f * conj(orot_f)
-        mdot_PDS = abs(mdot_f)**2 ; orot_PDS = abs(orot_f)**2
+        if cotest:
+            mdotfun = interp1d(t, mdot, bounds_error=False, fill_value = mdot.mean())
+            tlag = 1e-2
+            orot = 1e-3 * mdotfun(t+tlag)
+        orot_f = 2.*rfft(orot-orot.mean())/orot.sum()
+        l_f = 2.*rfft(L-L.mean())/L.sum()
+        o_cross = mdot_f * conj(orot_f)
+        mdot_PDS = abs(mdot_f)**2 ; orot_PDS = abs(orot_f)**2 ; l_PDS = abs(l_f)**2
         mdot_PDS_av += mdot_PDS ; mdot_PDS_std += mdot_PDS**2
         orot_PDS_av += orot_PDS ; orot_PDS_std += orot_PDS**2
-        cross = mdot_f * conj(orot_f)
-        cross_av += cross
-        dcross_im += cross.imag**2
-        dcross_re += cross.real**2
+        l_PDS_av += l_PDS ; l_PDS_std += l_PDS**2
+        o_cross = copy(mdot_f * conj(orot_f))
+        l_cross = copy(mdot_f * conj(l_f))
+        o_cross_av += o_cross ;     l_cross_av += l_cross
+        o_dcross_im += o_cross.imag**2 ;   o_dcross_re += o_cross.real**2
+        l_dcross_im += l_cross.imag**2 ;   l_dcross_re += l_cross.real**2
 
     # mean values:
-    mdot_PDS_av /= double(nsims) ; orot_PDS_av /= double(nsims)
-    cross_av /= double(nsims)
+    mdot_PDS_av /= (nsims) ; orot_PDS_av /= (nsims) ; l_PDS_av /= (nsims)
+    o_cross_av /= (nsims) ; l_cross_av /= (nsims)
     # RMS:
-    mdot_PDS_std = sqrt(mdot_PDS_std / double(nsims) - mdot_PDS_av**2) / sqrt(double(nsims-1))
-    orot_PDS_std = sqrt(orot_PDS_std / double(nsims) - orot_PDS_av**2) / sqrt(double(nsims-1))
-    dcross_im = sqrt(dcross_im / double(nsims) - cross_av.imag**2) / sqrt(double(nsims-1))
-    dcross_re = sqrt(dcross_re / double(nsims) - cross_av.real**2) / sqrt(double(nsims-1))
-    # coherence:
-    coherence = abs(cross_av) / sqrt(mdot_PDS_av*orot_PDS_av)
-    dcoherence = (sqrt(dcross_im**2 + dcross_re**2)/abs(cross_av) +  (mdot_PDS_std/mdot_PDS_av + orot_PDS_std/orot_PDS_av) * 0.5) * coherence 
-    phaselag = angle(cross_av)
-    dphaselag = sqrt(dcross_im**2 + dcross_re**2)/abs(cross_av) # estimate for the angular size of the spot
+    mdot_PDS_std = sqrt(mdot_PDS_std / (nsims) - mdot_PDS_av**2) / sqrt(double(nsims-1))
+    orot_PDS_std = sqrt(orot_PDS_std / (nsims) - orot_PDS_av**2) / sqrt(double(nsims-1))
+    l_PDS_std = sqrt(l_PDS_std / (nsims) - l_PDS_av**2) / sqrt(double(nsims-1))
+
+    o_coherence = abs(o_cross)/sqrt(orot_PDS_av*mdot_PDS_av)
+    o_phaselag = angle(o_cross)
+    o_dcross_im = sqrt(o_dcross_im / (nsims) - o_cross_av.imag**2) / sqrt(double(nsims-1))
+    o_dcross_re = sqrt(o_dcross_re / (nsims) - o_cross_av.real**2) / sqrt(double(nsims-1))
+    o_dcoherence = 0.5 * ((o_dcross_im * abs(o_cross_av.imag) + o_dcross_re * abs(o_cross_av.real))/abs(o_cross_av)**2
+                          + orot_PDS_std / orot_PDS_av + mdot_PDS_std / mdot_PDS_std / orot_PDS_av) * o_coherence
+    o_dphaselag = (o_dcross_im * abs(o_cross_av.real) + o_dcross_re * abs(o_cross_av.imag))/abs(o_cross_av)
+    l_coherence = abs(l_cross)/sqrt(l_PDS_av*mdot_PDS_av)
+    l_phaselag = angle(l_cross)
+    l_dcross_im = sqrt(l_dcross_im / (nsims) - l_cross_av.imag**2) / sqrt(double(nsims-1))
+    l_dcross_re = sqrt(l_dcross_re / (nsims) - l_cross_av.real**2) / sqrt(double(nsims-1))
+    l_dcoherence = 0.5 * ((l_dcross_im * abs(l_cross_av.imag) + l_dcross_re * abs(l_cross_av.real))/abs(l_cross_av)**2
+                          + l_PDS_std / l_PDS_av + mdot_PDS_std / mdot_PDS_std / orot_PDS_av)* l_coherence
+    l_dphaselag = (l_dcross_im * abs(l_cross_av.real) + l_dcross_re * abs(l_cross_av.imag))/abs(l_cross_av)
     
     w = freq > 0.
     
-    clf()
-    # plot(freq, mdot_pds, 'k,')
-    # plot(freq, lBL_pds, 'r,')
-    errorbar(freq[w], mdot_PDS_av[w], yerr = mdot_PDS_std[w], fmt = 'ks')
-    errorbar(freq[w], orot_PDS_av[w], yerr = orot_PDS_std[w], fmt = 'rd')   
-    # plot(freq[freq>0.], 1e-3/((freq[freq>0.]*1000.*4.92594e-06*1.5)**2+1.), 'g-')
-    xlim([1./tspan/2., freq.max()])
-    xscale('log') ; yscale('log')
-    xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
-    savefig('pdss.png')
-    savefig('pdss.eps')
-    clf()
-    fig, ax = subplots(2,1)
-    ax[0].errorbar(freq[w], phaselag[w],
-                   yerr =  dphaselag[w], fmt = 'k.')
-    ax[0].plot(freq[w], freq[w]*0., 'r-')
-    ax[0].plot(freq[w], freq[w]*0.+pi/2., 'r-')
-    ax[0].plot(freq[w], freq[w]*0.+pi, 'r-')
-    ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
-    ax[1].errorbar(freq[w], coherence[w], yerr = dcoherence[w], fmt = 'k.')
-    ax[1].set_xscale('log')
-    ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
-    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
-    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-    fig.set_size_inches(5, 6)
-    fig.tight_layout()
-    savefig('coherence.png')
-    savefig('coherence.eps')
-    close('all')
+    if cotest:   
+        clf()
+        fig, ax = subplots(2,1)
+        ax[0].errorbar(freq[w], phaselag[w],
+                       yerr =  dphaselag[w], fmt = 'k.')
+        ax[0].plot(freq[w], ((pi-2.*pi*tlag*freq[w]) % (2.*pi))-pi,
+                   'c-', linewidth = 3)
+        ax[0].plot(freq[w], freq[w]*0., 'r-')
+        ax[0].plot(freq[w], freq[w]*0.+pi/2., 'r-')
+        ax[0].plot(freq[w], freq[w]*0.+pi, 'r-')
+        ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
+        ax[1].errorbar(freq[w], coherence[w], yerr = dcoherence[w], fmt = 'k.')
+        ax[1].set_xscale('log') ; ax[0].set_ylim(-pi,pi) ; ax[1].set_ylim(-pi,pi)
+        ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
+        ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+        ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+        ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+        ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+        fig.set_size_inches(5, 6)
+        fig.tight_layout()
+        savefig('coherence.png')
+        savefig('coherence.eps')
+        close('all')
+
     # binning:
     if binning is not None:
         nbins = binning
         npoints = zeros(nbins, dtype = integer)
-        mdot_PDS_avbin = zeros(nbins) ; orot_PDS_avbin = zeros(nbins)
-        mdot_dpdsbin = zeros(nbins) ; orot_dpdsbin = zeros(nbins) # variation within the bin
-        mdot_PDS_stdbin = zeros(nbins) ; orot_PDS_stdbin = zeros(nbins) # mean uncertainty
-        coherence_avbin = zeros(nbins)
-        dcoherence_avbin = zeros(nbins) # variation within the bin
-        coherence_stdbin = zeros(nbins) # mean uncertainty
-        phaselag_avbin = zeros(nbins)
-        dphaselag_avbin = zeros(nbins) # variation within the bin
-        phaselag_stdbin = zeros(nbins) # mean uncertainty
-        
+        mdot_PDS_avbin = zeros(nbins) ; orot_PDS_avbin = zeros(nbins) ; l_PDS_avbin = zeros(nbins)
+        mdot_dpdsbin = zeros(nbins) ; orot_dpdsbin = zeros(nbins) ; l_dpdsbin = zeros(nbins)
+        # --variation within the bin
+        mdot_PDS_stdbin = zeros(nbins) ; orot_PDS_stdbin = zeros(nbins) ; l_PDS_stdbin = zeros(nbins)
+        # --mean uncertainty
+        o_cross_avbin = zeros(nbins, dtype = complex) ; o_coherence_avbin = zeros(nbins)
+        o_dcoherence_avbin = zeros(nbins) # variation within the bin
+        o_coherence_stdbin = zeros(nbins) # mean uncertainty
+        o_phaselag_avbin = zeros(nbins)
+        o_dphaselag_avbin = zeros(nbins) # variation within the bin
+        o_phaselag_stdbin = zeros(nbins) # mean uncertainty
+        l_cross_avbin = zeros(nbins, dtype = complex) ; o_coherence_avbin = zeros(nbins)
+        l_dcoherence_avbin = zeros(nbins) # variation within the bin
+        l_coherence_stdbin = zeros(nbins) # mean uncertainty
+        l_phaselag_avbin = zeros(nbins)
+        l_dphaselag_avbin = zeros(nbins) # variation within the bin
+        l_phaselag_stdbin = zeros(nbins) # mean uncertainty
+       
         print(str(nbins)+" bins\n")
-        freq1 =1./tspan/2. ; freq2=freq1*np.double(nt)/2.        
+        freq1 =1./tspan/2. ; freq2=freq1*np.double(nt)/2.
+        x = arange(nbins+1)/np.double(nbins)
         if(logbinning):
-            binfreq=(freq2/freq1)**((np.arange(nbins+1)/np.double(nbins)))*freq1
+            df = (freq2-freq1) / double(nf) ; kfactor = 10. # k restricts the number of points per unit freqbin
+            binfreq = logABC(x, [freq1, freq2], kfactor * double(nbins)/ double(nf))
+            # (freq2-freq1) * exp(kfactor * double(nbins)/double(nf) * (x-1.))+freq1
+            print(binfreq)
+            ii =input("BF")
+            # (freq2/freq1)**((np.arange(nbins+1)/np.double(nbins)))*freq1
+            #  binfreq[0] = 0.
         else:
-            binfreq=(freq2-freq1)*((np.arange(nbins+1)/np.double(nbins)))+freq1
+            binfreq=(freq2-freq1)*x+freq1
         for kb in arange(nbins):
             freqrange=(freq>=binfreq[kb])&(freq<binfreq[kb+1])
             npoints[kb] = freqrange.sum()
+            #    print(npoints[kb])
             mdot_PDS_avbin[kb]=mdot_PDS_av[freqrange].mean() 
             mdot_PDS_stdbin[kb]=mdot_PDS_std[freqrange].mean() 
             mdot_dpdsbin[kb]=mdot_PDS_av[freqrange].std() / sqrt(double(npoints[kb]-1))
             orot_PDS_avbin[kb]=orot_PDS_av[freqrange].mean() 
             orot_PDS_stdbin[kb]=orot_PDS_std[freqrange].mean() 
             orot_dpdsbin[kb]=orot_PDS_av[freqrange].std() / sqrt(double(npoints[kb]-1))
-            coherence_avbin[kb] = coherence[freqrange].mean() 
-            coherence_stdbin[kb] = dcoherence[freqrange].mean() 
-            dcoherence_avbin[kb] = coherence[freqrange].std() / sqrt(double(npoints[kb]-1))
-            phaselag_avbin[kb] = phaselag[freqrange].mean() 
-            phaselag_stdbin[kb] = dphaselag[freqrange].mean() 
-            dphaselag_avbin[kb] = phaselag[freqrange].std() / sqrt(double(npoints[kb]-1))
-            
+            l_PDS_avbin[kb]=l_PDS_av[freqrange].mean() 
+            l_PDS_stdbin[kb]=l_PDS_std[freqrange].mean() 
+            l_dpdsbin[kb]=l_PDS_av[freqrange].std() / sqrt(double(npoints[kb]-1))
+            o_cross_avbin[kb]=o_cross_av[freqrange].mean()
+            #           o_coherence_avbin[kb] = o_coherence[freqrange].mean() 
+            o_coherence_stdbin[kb] = o_dcoherence[freqrange].mean() 
+            o_dcoherence_avbin[kb] = o_coherence[freqrange].std() / sqrt(double(npoints[kb]-1))
+            #  o_phaselag_avbin[kb] = o_phaselag[freqrange].mean() 
+            o_phaselag_stdbin[kb] = o_dphaselag[freqrange].mean() 
+            o_dphaselag_avbin[kb] = o_phaselag[freqrange].std() / sqrt(double(npoints[kb]-1))
+            l_cross_avbin[kb]=l_cross_av[freqrange].mean()
+            #  l_coherence_avbin[kb] = l_coherence[freqrange].mean() 
+            l_coherence_stdbin[kb] = l_dcoherence[freqrange].mean() 
+            l_dcoherence_avbin[kb] = l_coherence[freqrange].std() / sqrt(double(npoints[kb]-1))
+            #   l_phaselag_avbin[kb] = l_phaselag[freqrange].mean() 
+            l_phaselag_stdbin[kb] = l_dphaselag[freqrange].mean() 
+            l_dphaselag_avbin[kb] = l_phaselag[freqrange].std() / sqrt(double(npoints[kb]-1))
+
+        o_phaselag_avbin = angle(o_cross_avbin)      
+        o_coherence_avbin = abs(o_cross_avbin)/sqrt(mdot_PDS_avbin * orot_PDS_avbin)
+        l_phaselag_avbin = angle(l_cross_avbin)
+        l_coherence_avbin = abs(l_cross_avbin)/sqrt(mdot_PDS_avbin * l_PDS_avbin)
+        
         # ASCII output:
         fout = open(infile+'_sp.dat', 'w')
         fout.write("# f1  f2  mdot dmdot d1mdot Omega dOmega d1Omega coherence dcoherence d1coherence  phaselag dphaselag d1phaselag npoints\n")
@@ -167,17 +252,24 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
             fout.write(str(binfreq[k])+" "+str(binfreq[k+1])+" "
                        +str(mdot_PDS_avbin[k])+" "+str(mdot_dpdsbin[k])+" "+str(mdot_PDS_stdbin[k])+" "
                        +str(orot_PDS_avbin[k])+" "+str(orot_dpdsbin[k])+" "+str(orot_PDS_stdbin[k])+" "
-                       +str(coherence_avbin[k])+" "+str(dcoherence_avbin[k])+" "+str(coherence_stdbin[k])+" "
-                       +str(phaselag_avbin[k])+" "+str(dphaselag_avbin[k])+" "+str(phaselag_stdbin[k])+" "
+                       +str(o_coherence_avbin[k])+" "+str(o_dcoherence_avbin[k])+" "+str(o_coherence_stdbin[k])+" "
+                       +str(o_phaselag_avbin[k])+" "+str(o_dphaselag_avbin[k])+" "+str(o_phaselag_stdbin[k])+" "
                        +str(npoints[k])+"\n")
             fout.flush()
         fout.close()
         if ifplot:
-            plots.pds(binfreq, mdot_PDS_avbin, mdot_dpdsbin, orot_PDS_avbin, orot_dpdsbin, npoints)
+            plots.pds(binfreq, mdot_PDS_avbin, mdot_dpdsbin, orot_PDS_avbin, orot_dpdsbin, npoints, outfile = 'o_pdss')
+            plots.pds(binfreq, mdot_PDS_avbin, mdot_dpdsbin, l_PDS_avbin, l_dpdsbin, npoints, outfile = 'l_pdss')
             #        plots.phaselag(binfreq, phaselag_bin, dphaselag_bin, npoints)
-            plots.coherence(binfreq, coherence_avbin, dcoherence_avbin, phaselag_avbin, dphaselag_avbin,
+            plots.coherence(binfreq, o_coherence_avbin, o_dcoherence_avbin, o_phaselag_avbin, o_dphaselag_avbin,
                             mdot_PDS_avbin, mdot_dpdsbin, orot_PDS_avbin, orot_dpdsbin,
-                            npoints, outfile = 'cobin')
+                            npoints, outfile = 'o_cobin')
+            plots.coherence(binfreq, l_coherence_avbin, l_dcoherence_avbin, l_phaselag_avbin, l_dphaselag_avbin,
+                            mdot_PDS_avbin, mdot_dpdsbin, l_PDS_avbin, l_dpdsbin,
+                            npoints, outfile = 'l_cobin')
+            plots.coherence(binfreq, l_coherence_avbin, l_coherence_stdbin, l_phaselag_avbin, l_phaselag_stdbin,
+                            mdot_PDS_avbin, mdot_dpdsbin, l_PDS_avbin, l_dpdsbin,
+                            npoints, outfile = 'l_cobin1')
 
     
 def spec_readall(infile = 'slabout', trange = [0.1,1e5]):

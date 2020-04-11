@@ -20,8 +20,8 @@ import hdfoutput as hdf
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-5
-tdepl = 1e3 # depletion time in GM/c^3 units
+alpha = 1e-2
+tdepl = 1e5 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS
