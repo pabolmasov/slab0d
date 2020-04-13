@@ -9,6 +9,8 @@ from scipy.signal import *
 # for curve fitting:
 from scipy.optimize import curve_fit
 import os
+import multiprocessing
+from multiprocessing import Pool
 
 import noize
 import hdfoutput as hdf
@@ -18,17 +20,38 @@ import hdfoutput as hdf
 # dl/dt = mdot * j - alpha * geff * M * R * (omega > omegaNS)
 # dm/dt = mdot - alpha * geff * M^2/L * R * (omega > omegaNS)
 
+# noise parameters:
+nflick = 2.
+tbreak = None
+
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-2
-tdepl = 1e5 # depletion time in GM/c^3 units
+alpha = 1e-5
+tdepl = 1e2 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS
 mscale = 6.41417e10 * mNS
 omegaNS = 2.*pi/pspin *tscale
-ifplot = False
-ifasc = False
+
+# initial conditions:
+mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
+dmdot =  0.5 # relative variation dispersion
+
+# time grid
+maxtimescale = (tdepl+1./alpha)
+mintimescale = 1./(1./tdepl+alpha)
+dtdyn = r**1.5
+dtout = minimum(0.3*dtdyn,3e-2*mintimescale) # this gives 10^5 data points
+tmax = 10.*maxtimescale
+nt = int(ceil(tmax/dtout))
+print(str(nt)+" points in time")
+tar = dtout * arange(nt)
+
+# outputs:
+ifplot = False # if we are plotting against the computer (disabled for now)
+ifasc = True # if we are writing ASCII output
+hname = 'slabout' # output HDF5 file name
 if ifplot:
     import plots
 
@@ -57,116 +80,98 @@ def onestep(m, l, mdot):
     #    print(omegaNS)
     return dm, dl, lout, cth
 
-def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout'):
+def singlerun(krepeat):
     '''
     evolution of a layer spun up by a variable mass accretion rate. 
     If nflick is set, it is the power-law index of the noize spectrum
     if tbreak is set, it is the characteristic time scale for the spectral break
     if neither is set, mass accretion rate is assumed constant
-    the run is repeated "nrepeat" times, and the resulting PDS averaged
+    runs an iteration with the number krepeat
     '''
+    print("simulation No"+str(krepeat))
     # initial conditions:
-    mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
-    dmdot =  0.5 # relative variation dispersion
-
-    maxtimescale = (tdepl+1./alpha)
-    mintimescale = 1./(1./tdepl+alpha)
-    t = 0. ; dt = 0.1 ; tmax = 10.*maxtimescale
-    tstore = 0.; dtout = minimum(1.,1e-2*mintimescale) # this gives 10^5 data points
-    dtdyn = r**1.5
-    #    tbreak = 100. * dtdyn 
-
+    tstore = 0.;
     m = mdot * tdepl * 0.1 # starting mass, 10% from equilibrium
     l = m*omegaNS*r**2   # starting angular momentum
-
-    for krepeat in arange(nrepeat):
-        # single run
-        tlist = [] ; mlist = [] ; llist = [] ; loutlist = [] ; clist = []
-        # time, mass, angular momentum, total luminosity, thickness of the layer
-        t = 0. ; tstore = 0.
-        # input noize
-        # the highest frequency present in the noise is the local dynamical scale, anyway; inside the dynamical time scale, it is safe to interpolate
-        if (nflick is not None):
-            tint, mint = noize.flickgen(tmax, dtdyn, nslope = nflick)
+    t = 0. ; dt = 0.1 ; ctr = 0
+    # setting the input mdot variability spectrum:
+    if (nflick is not None):
+        tint, mint = noize.flickgen(tmax, dtdyn, nslope = nflick)
+        mmean = mint.mean() ; mrms = mint.std()
+    else:
+        if tbreak is not None:
+            tint, mint = noize.brown(tmax, dtdyn, tbreak)  # nslope = nflick)
             mmean = mint.mean() ; mrms = mint.std()
-        else:
-            if tbreak is not None:
-                tint, mint = noize.brown(tmax, dtdyn, tbreak)  # nslope = nflick)
-                mmean = mint.mean() ; mrms = mint.std()
-        if(nflick is not None) or (tbreak is not None):
-            mint = mdot * exp( (mint-mmean)/mrms * dmdot)
-            mconst = False
-            mfun = interp1d(tint, mint, bounds_error = False, fill_value=(mint[0], mint[-1]))
-        else:
-            mconst = True
-            meq = mdot * tdepl
-            q = r**2/alpha/tdepl/j
-            oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
-        if ifasc:
-            # ASCII output
-            print("writing file number "+str(krepeat)+" of "+str(nrepeat)+"\n")
-            fout = open('slabout'+hdf.entryname(krepeat)+'.dat', 'w')
-            fout.write('# parameters:')
-            fout.write('# mdot = '+str(mdot)+'\n')
-            fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
-            if (nflick is not None):
-                fout.write('# flickering with p = '+str(nflick)+'\n')
-            if (tbreak is not None):
-                fout.write('# brownian with tbreak = '+str(tbreak)+'\n')
-            fout.write('# t  mdot m lout orot\n')
-        while(t<tmax):           
-            # halfstep:
-            dt = 1./(100.*(mdot/m)+100.*(mdot*j/l)+1./tdepl+1./dtout)
-            if mconst:
-                mdotcurrent = mdot
-                mdotcurrent1 = mdot
-            else:
-                mdotcurrent = mfun(t)
-                mdotcurrent1 = mfun(t+dt/2.)
-            dm, dl, lout, cth = onestep(m, l, mdotcurrent)
-            if isinf(dm+dl):
-                print("dm = "+str(dm))
-                print("dl = "+str(dl))
-                ii=input("ddl")
-            m1 = m+dm*dt/2. ; l1 = l + dl*dt/2. ; t1 = t+dt/2.
-            dm, dl, lout, cth = onestep(m1, l1, mdotcurrent1)
-            m += dm*dt ; l += dl*dt ; t +=dt
-
-            if(t>=tstore):
-                orot = l / m /r**2/tscale / 2. /pi
-                if ifasc:
-                    fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m*mscale)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
-                    fout.flush()
-                tlist.append(t)
-                mlist.append(m)
-                llist.append(l)
-                loutlist.append(lout)
-                clist.append(cth)
-                #   print(str(t)+" "+str(m)+" "+str(l)+"\n")
-                #                print("dt = "+str(dt))
-                tstore += dtout
-        if ifasc:
-            fout.close()
-        tar = array(tlist, dtype = double) * tscale
-        mar = array(mlist, dtype = double) * mscale
-        orot = array(llist, dtype = double) / array(mlist, dtype = double) / r**2/tscale/2./pi
-        loutar = array(loutlist, dtype = double) / (4.*pi)
+    if(nflick is not None) or (tbreak is not None):
+        mint = mdot * exp( (mint-mmean)/mrms * dmdot)
+        mconst = False
+        mfun = interp1d(tint, mint, bounds_error = False, fill_value=(mint[0], mint[-1]))
+    else:
+        mconst = True
+        meq = mdot * tdepl
+        q = r**2/alpha/tdepl/j
+        oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
+    # ASCII output:
+    if ifasc:
+        # ASCII output
+        #        print("writing file number "+str(krepeat)+" of "+str(nrepeat)+"\n")
+        fout = open('slabout'+hdf.entryname(krepeat)+'.dat', 'w')
+        fout.write('# parameters:')
+        fout.write('# mdot = '+str(mdot)+'\n')
+        fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
+        if (nflick is not None):
+            fout.write('# flickering with p = '+str(nflick)+'\n')
+        if (tbreak is not None):
+            fout.write('# brownian with tbreak = '+str(tbreak)+'\n')
+        fout.write('# t  mdot m lout orot\n')
+    mdotar = zeros(nt) ; loutar = zeros(nt) ; mar = zeros(nt) ; orotar = zeros(nt)
+    while(t<tmax):           
+        # halfstep:
+        dt = 1./(100.*(mdot/m)+100.*(mdot*j/l)+1./tdepl+1./dtout)
         if mconst:
-            mdotar = zeros(size(tar)) + mdot
-            ldisc = zeros(size(tar)) + mdot / r / 2.
+            mdotcurrent = mdot
+            mdotcurrent1 = mdot
         else:
-            mdotar = mfun(tar/tscale)
-            ldisc = mfun(tar/tscale)/r/2.
-        ldisc /= 8.*pi # half of potential energy
-        cthar = array(clist, dtype = double)
-        # HDF output
-        if krepeat <1:
-            hfile = hdf.init(hname, tar, mdot = mdot, alpha = alpha, tdepl = tdepl,
-                             nsims =nrepeat, nflick = nflick, tbreak = tbreak )
-            #        print(size(["mdot", "L", "M", "omega"]))
-            # ii=input("time")
-        hdf.dump(hfile, krepeat, ["mdot", "L", "M", "omega"],
-                 [mdotar, loutar, mar, orot])
+            mdotcurrent = mfun(t)
+            mdotcurrent1 = mfun(t+dt/2.)
+        dm, dl, lout, cth = onestep(m, l, mdotcurrent)
+        if isinf(dm+dl):
+            print("dm = "+str(dm))
+            print("dl = "+str(dl))
+            ii=input("ddl")
+        m1 = m+dm*dt/2. ; l1 = l + dl*dt/2. ; t1 = t+dt/2.
+        dm, dl, lout, cth = onestep(m1, l1, mdotcurrent1)
+        m += dm*dt ; l += dl*dt ; t +=dt
+
+        if(t>=tstore):
+            orot = l / m /r**2/tscale / 2. /pi
+            if ifasc:
+                fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m*mscale)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
+                fout.flush()
+            tstore += dtout
+            mdotar[ctr] = mdotcurrent1/4./pi ; loutar[ctr] = lout/ (4.*pi) ; mar[ctr] = m1 ; orotar[ctr] = orot
+            ctr+=1
+    if ifasc:
+        fout.close()
+    if hfile is not None:
+        hdf.dump(hfile, krepeat, ["mdot", "L", "M", "omega"], [mdotar, loutar, mar, orotar])
+    return True
+
+def slab_evolution(nrepeat = 1, nproc = None):
+    global hfile 
+    
+    hfile = hdf.init(hname, tar, mdot = mdot, alpha = alpha, tdepl = tdepl,
+                     nsims = nrepeat, nflick = nflick, tbreak = tbreak )
+    krepeat = linspace(0,nrepeat, num=nrepeat, endpoint=False, dtype=int)
+    print(krepeat)
+    if nproc is not None:
+        pool = multiprocessing.Pool(nproc)
+        pool.map(singlerun, krepeat)
+    else:
+        print('sequential mapping\n')
+        # [singlerun(x, nflick=nflick, tbreak=tbreak, hfile=hfile) for x in krepeat]
+        map(singlerun, krepeat)
+        '''
         if ifplot:
             if mconst:
                 plots.mconsttests(tar, mar, orot, meq, oeq)
@@ -175,5 +180,6 @@ def slab_evolution(nflick = None, tbreak = None, nrepeat = 1, hname = 'slabout')
                 w=(tar > (0.9*tmax * tscale))
                 print(w.sum())
                 plots.generalcurve(tar[w], mdotar[w], mar[w], orot[w], cthar[w], loutar[w], ldisc[w])
+        '''
     hfile.close()
 

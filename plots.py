@@ -102,27 +102,36 @@ def generalcurve(tar, mdot, mar, orot, cthar, loutar, ldisc):
 ####################################################################################
 # for timing:
 
-def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin, npoints, outfile = 'pdss'):
+def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, mdot_dpdsbin1, lBL_pdsbin, lBL_dpdsbin, lBL_dpdsbin1, npoints, outfile = 'pdss'):
 
     binfreqc = (binfreq[1:]+binfreq[:-1])/2.
     binfreqs = (binfreq[1:]-binfreq[:-1])/2.    
     w = npoints>=2.
     
     clf()
+    fig=figure()
     # plot(freq, mdot_pds, 'k,')
     # plot(freq, lBL_pds, 'r,')
-    errorbar(binfreqc[w], mdot_pdsbin[w], xerr = binfreqs[w], yerr = mdot_dpdsbin[w]/sqrt(npoints[w]-1.), fmt = 'ks')
-    errorbar(binfreqc[w], lBL_pdsbin[w], xerr = binfreqs[w], yerr = lBL_dpdsbin[w]/sqrt(npoints[w]-1.), fmt = 'rd')
+    eb1 = errorbar(binfreqc[w]+binfreqs[1]*0.2, (binfreqc*mdot_pdsbin)[w], yerr = mdot_dpdsbin1[w], fmt = 'none', color='k')
+    eb1[-1][0].set_linestyle(':')
+    errorbar(binfreqc[w], (binfreqc*mdot_pdsbin)[w], xerr = binfreqs[w], yerr = (binfreqc*mdot_dpdsbin)[w], fmt = 'ks')
+    eb2 = errorbar(binfreqc[w]+binfreqs[1]*0.2, (binfreqc*lBL_pdsbin)[w], yerr = (binfreqc*lBL_dpdsbin1)[w], fmt = 'none', color='r')
+    eb2[-1][0].set_linestyle(':')
+    errorbar(binfreqc[w], (binfreqc*lBL_pdsbin)[w], xerr = binfreqs[w], yerr = (binfreqc*lBL_dpdsbin)[w], fmt = 'rd')
     # plot(freq[freq>0.], 1e-3/((freq[freq>0.]*1000.*4.92594e-06*1.5)**2+1.), 'g-')
     xlim([binfreqc.min()/2., binfreq.max()])
     xscale('log') ; yscale('log')
-    xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
+    xlabel(r'$f$, Hz') ; ylabel(r'$f \, PDS$')
+    tick_params(labelsize=14, length=6, width=1., which='major')
+    tick_params(labelsize=14, length=4, width=1., which='minor')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
     savefig(outfile + '.png')
     savefig(outfile + '.eps')
     close()
 
-def pds_doubled(freq1, freq2, mdot_pdsbin, mdot_dpdsbin1,  mdot_dpdsbin2, lBL_pdsbin, lBL_dpdsbin1, lBL_dpdsbin2, npoints):
-    # for a double error source, variability within the frequency bin and ensemble variations
+def pds_doubled(freq1, freq2, mdot_pdsbin, mdot_dpdsbin1,  mdot_dpdsbin2, lBL_pdsbin, lBL_dpdsbin1, lBL_dpdsbin2, npoints, outfile):
+    # for a double error source,  ensemble variations and variability within the frequency bin
     freqc = (freq1+freq2)/2.
     freqs = (freq2-freq1)/2.    
     clf()
@@ -133,8 +142,8 @@ def pds_doubled(freq1, freq2, mdot_pdsbin, mdot_dpdsbin1,  mdot_dpdsbin2, lBL_pd
     xlim([freqc.min()/2., freq2.max()])
     xscale('log') ; yscale('log')
     xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
-    savefig('pdss2.png')
-    savefig('pdss2.eps')
+    savefig(outfile+'.png')
+    savefig(outfile+'.eps')
     close()
     
 def phaselag(binfreq, phaselag_bin, dphaselag_bin, mmdot_crossbin, npoints):
@@ -152,13 +161,9 @@ def phaselag(binfreq, phaselag_bin, dphaselag_bin, mmdot_crossbin, npoints):
     savefig('phaselag.eps')
     close()
 
-def coherence(binfreq, coherence, dcoherence, phaselag, dphaselag,
-              mdot_PDS, mdot_dPDS, orot_PDS, orot_dPDS,
+def coherence(binfreq, coherence, dcoherence, dcoherence1,
+              phaselag, dphaselag, dphaselag1,
               npoints, outfile = 'cobin'):
-    # (binfreq, mmdot_crossbin, dmmdot_crossbin,
-    #              mdot_pdsbin, mdot_dpdsbin, lBL_pdsbin, lBL_dpdsbin,
-    #              npoints, outfile = 'coherence'):
-    #!!! do we need PDS uncertainties?
     freq = binfreq
     binfreqc = (binfreq[1:]+binfreq[:-1])/2.
     binfreqs = (binfreq[1:]-binfreq[:-1])/2.    
@@ -169,27 +174,33 @@ def coherence(binfreq, coherence, dcoherence, phaselag, dphaselag,
     # ax[0].set_xlabel(r'$f$, Hz') ;
     ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [-pi,pi], 'g')
     ax[0].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [-pi,pi], 'g--')
-    ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [-pi,pi], 'g:')
+    ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [-pi,pi], 'g-.')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi, 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi/2., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi, 'r-')
-    ax[0].errorbar(binfreqc[w], phaselag, xerr = binfreqs[w],
-                   yerr = dphaselag, fmt = 'k.')
+    ax[0].errorbar(binfreqc[w], phaselag[w], xerr = binfreqs[w],
+                   yerr = dphaselag[w], fmt = 'k.')
+    e1 = ax[0].errorbar(binfreqc[w]+binfreqs[w]*0.2, phaselag[w],
+                        yerr = dphaselag1[w], fmt = 'none')
+    e1[-1][0].set_linestyle(':')
     ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18) ; ax[0].set_ylim(-pi,pi)
     ax[1].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,1.], 'g')
     ax[1].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [0.,1.], 'g--')
     ax[1].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,1.], 'g:')
     ax[1].errorbar(binfreqc[w], coherence,
-                   xerr = binfreqs[w], yerr = dcoherence, fmt = 'k.')
-    ax[1].set_xscale('log')
+                   xerr = binfreqs[w], yerr = dcoherence[w], fmt = 'k.')
+    e1 = ax[1].errorbar(binfreqc[w]+binfreqs[w]*0.2, coherence[w],
+                        yerr = dcoherence1[w], fmt = 'none')
+    e1[-1][0].set_linestyle(':')
+    ax[1].set_xscale('log') # ;   ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
     ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
     ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
     ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
     ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-    fig.set_size_inches(5, 6)
+    fig.set_size_inches(10, 6)
     fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.eps')
