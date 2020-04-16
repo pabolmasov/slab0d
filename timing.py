@@ -8,7 +8,7 @@ from scipy.optimize import root_scalar
 
 import hdfoutput as hdf
 import plots as plots
-from mslab import r
+from mslab import r, ifzarr
 
 #Uncomment the following if you want to use LaTeX in figures
 rc('font',**{'family':'serif','serif':['Times']})
@@ -64,7 +64,7 @@ def viewcurve(infile, nentry):
     fig = figure()
     plot(t, L, 'k-')
     plot(t, Ldisc, 'r:')
-    xlabel(r'$t$, s') ; ylabel(r'$\dot{L}/L_{\rm Edd}$') ; xlim(trange[0],trange[1]) ; ylim(minimum(L,Ldisc)[w].min(), maximum(L, Ldisc)[w].max())
+    xlabel(r'$t$, s') ; ylabel(r'$L/L_{\rm Edd}$') ; xlim(trange[0],trange[1]) ; ylim(minimum(L,Ldisc)[w].min(), maximum(L, Ldisc)[w].max())
     fig.set_size_inches(10, 3)
     savefig(infile+"_lBL.png")
     close("all")
@@ -77,7 +77,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
     simfilter = [N1, N2]  sets the number range of the files used in the simulation
     cotest (boolean) is used to test the correct work of the covariance analysis
     '''
-    keys = hdf.keyshow(infile+'.hdf5')
+    keys = hdf.keyshow(infile)
     nsims = size(keys)-1 # one key points to globals
 
     if simfilter is not None:
@@ -85,7 +85,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
         nsims  = size(keys)-1
     
     for k in arange(nsims):
-        t, datalist = hdf.read(infile+'.hdf5', 0, entry = keys[k])
+        t, datalist = hdf.read(infile, 0, entry = keys[k])
         L, M, mdot, orot = datalist
         if k == 0:
             nt = size(t) ;  tspan = t.max() - t.min() 

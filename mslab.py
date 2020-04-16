@@ -11,6 +11,7 @@ from scipy.optimize import curve_fit
 import os
 import multiprocessing
 from multiprocessing import Pool
+# from mpi4py import MPI
 
 import noize
 import hdfoutput as hdf
@@ -21,8 +22,8 @@ import hdfoutput as hdf
 # dm/dt = mdot - alpha * geff * M^2/L * R * (omega > omegaNS)
 
 # noise parameters:
-nflick = 2.
-tbreak = None
+nflick = None
+tbreak = 1.
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
@@ -51,6 +52,7 @@ tar = dtout * arange(nt)
 # outputs:
 ifplot = False # if we are plotting against the computer (disabled for now)
 ifasc = True # if we are writing ASCII output
+ifzarr = True
 hname = 'slabout' # output HDF5 file name
 if ifplot:
     import plots
@@ -159,9 +161,10 @@ def singlerun(krepeat):
 
 def slab_evolution(nrepeat = 1, nproc = None):
     global hfile 
-    
-    hfile = hdf.init(hname, tar, mdot = mdot, alpha = alpha, tdepl = tdepl,
-                     nsims = nrepeat, nflick = nflick, tbreak = tbreak )
+
+    hfile = hdf.init(hname, tar * tscale, mdot = mdot, alpha = alpha, tdepl = tdepl,
+                     nsims = nrepeat, nflick = nflick, tbreak = tbreak)
+        
     krepeat = linspace(0,nrepeat, num=nrepeat, endpoint=False, dtype=int)
     print(krepeat)
     if nproc is not None:
@@ -181,5 +184,5 @@ def slab_evolution(nrepeat = 1, nproc = None):
                 print(w.sum())
                 plots.generalcurve(tar[w], mdotar[w], mar[w], orot[w], cthar[w], loutar[w], ldisc[w])
         '''
-    hfile.close()
+        #    hfile.close()
 

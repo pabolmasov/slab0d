@@ -1,5 +1,12 @@
 import h5py
+import zarr
 from numpy import *
+
+from mslab import ifzarr
+
+'''
+inputs and outputs to HDF5 and zarr 
+'''
 
 def entryname(n, ndig = 6):
     entry = str(n).rjust(ndig, '0') # allows for 6 positions (hundreds of thousand of entries)
@@ -10,7 +17,10 @@ def init(hname, t, mdot = None, alpha = None, tdepl = None,
     '''
     creating the file and writing the time grid
     '''
-    hfile = h5py.File(hname+".hdf5", "w")
+    if ifzarr:
+        hfile = zarr.open(hname+".zarr", "w")
+    else:
+        hfile = h5py.File(hname+".hdf5", "w")
     glo = hfile.create_group("globals")
     if mdot is not None:
         glo.attrs['mdotmean']      = mdot
@@ -25,8 +35,10 @@ def init(hname, t, mdot = None, alpha = None, tdepl = None,
         glo.attrs['tbreak']      = tbreak
 
     glo.create_dataset("time", data = t)
-    
-    hfile.flush()
+
+    if not ifzarr:
+        hfile.flush()
+        
     return hfile # returns file stream reference
     
 def dump(hfile, nout, valnames, valarray):
@@ -35,28 +47,36 @@ def dump(hfile, nout, valnames, valarray):
     '''
     entry = entryname(nout)
     grp = hfile.create_group("entry"+entry)
-    grp.attrs["N"] = nout
+    #    grp.attrs["N"] = nout
     for k in arange(size(valnames)):
         grp.create_dataset(valnames[k], data=valarray[k][:])
         print("writing "+valnames[k]+" to entry"+entry)
-    hfile.flush()
+    if not ifzarr:
+        hfile.flush()
 
 #########################
 def keyshow(filename):
     '''
     showing the list of keys (entries) in a given data file
     '''
-    f = h5py.File(filename,'r', libver='latest')
+    if ifzarr:
+        f = zarr.open(filename+'.zarr','r')
+    else:
+        f = h5py.File(filename+'.hdf5','r', libver='latest')
     keys = list(f.keys())
     #    print(list(f.keys()))
-    f.close()
+    if not ifzarr:
+        f.close()
     return keys
 
 def read(hname, nentry, entry = None):
     '''
     read a single entry from an HDF5
     '''
-    hfile = h5py.File(hname, "r")
+    if ifzarr:
+        hfile = zarr.open(hname+".zarr", "r")
+    else:
+        hfile = h5py.File(hname+".hdf5", "r")
     glo=hfile["globals"]
     if entry is None:
         entry = "entry" + entryname(nentry)
@@ -68,7 +88,8 @@ def read(hname, nentry, entry = None):
     datalist = [] # list of the arrays read from the file
     for theval in vals:
         datalist.append(data[theval][:])
-        #    hfile.close()
+    if not ifzarr:
+        hfile.close()
     return time, datalist
     
 def vread(hname, valname = "mdot"):
@@ -76,7 +97,10 @@ def vread(hname, valname = "mdot"):
     read particular variable from all the entries from an HDF5
     global array t is read simultaneously
     '''
-    hfile = h5py.File(hname+".hdf5", "r")
+    if ifzarr:
+        hfile = zarr.open(hname+".zarr", "r")
+    else:
+        hfile = h5py.File(hname+".hdf5", "r")
     glo=hfile["globals"]
     time=glo["time"][:]
     keys = hfile.keys()
@@ -95,7 +119,8 @@ def vread(hname, valname = "mdot"):
             #            datalist.append(data[valname][:])
             datarray[k,:] = data[valname][:]
             k+=1
-    hfile.close()
+    if not ifzarr:
+        hfile.close()
     print("size(t) = "+str(size(t)))
     print("shape(datarray) = "+str(shape(datarray)))
     return t, datarray
