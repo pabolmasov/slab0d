@@ -2,8 +2,6 @@ import matplotlib
 from matplotlib import rc
 from numpy import *
 from mslab import ifplot
-if ifplot:
-    from pylab import *
 from scipy.integrate import *
 from scipy.interpolate import interp1d
 from scipy.signal import *
