@@ -22,8 +22,8 @@ import hdfoutput as hdf
 # dm/dt = mdot - alpha * geff * M^2/L * R * (omega > omegaNS)
 
 # noise parameters:
-nflick = None
-tbreak = 1.
+nflick = 2.
+tbreak = None
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
@@ -174,15 +174,6 @@ def slab_evolution(nrepeat = 1, nproc = None):
         print('sequential mapping\n')
         # [singlerun(x, nflick=nflick, tbreak=tbreak, hfile=hfile) for x in krepeat]
         map(singlerun, krepeat)
-        '''
-        if ifplot:
-            if mconst:
-                plots.mconsttests(tar, mar, orot, meq, oeq)
-            else:
-                print("plotting\n")
-                w=(tar > (0.9*tmax * tscale))
-                print(w.sum())
-                plots.generalcurve(tar[w], mdotar[w], mar[w], orot[w], cthar[w], loutar[w], ldisc[w])
-        '''
-        #    hfile.close()
+        if not ifzarr:
+            hfile.close()
 
