@@ -169,8 +169,12 @@ def singlerun(krepeat):
         hdf.dump(hfile, krepeat, ["mdot", "L", "M", "omega"], [mdotar, loutar, mar, orotar])
     return True
 
-def slab_evolution(nrepeat = 1, nproc = None):
+def slab_evolution(nrepeat = 1, nproc = None, somega = None):
     global hfile 
+    global sinefreq
+
+    if somega is not None:
+        sinefreq = 2. * pi * somega  * tscale # adjusting the sine frequency                                                   
 
     hfile = hdf.init(hname, tar * tscale, mdot = mdot, alpha = alpha, tdepl = tdepl,
                      nsims = nrepeat, nflick = nflick, tbreak = tbreak, regime = regime)

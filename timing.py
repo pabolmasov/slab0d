@@ -4,7 +4,11 @@ import matplotlib
 from pylab import *
 from matplotlib import interactive, use
 from scipy.interpolate import interp1d
-from scipy.optimize import root_scalar
+oldscipy = False
+if oldscipy:
+    from scipy.optimize import fsolve
+else:
+    from scipy.optimize import root_scalar
 
 import hdfoutput as hdf
 import plots as plots
@@ -35,11 +39,16 @@ def logABC(x, frange, rhs):
     '''
     # finding C:
     #   brhs = (frange[1]-frange[0])/rhs
-    sol = root_scalar(Bfun, args = (1./rhs), rtol = 1e-5, x0 = log(frange[1]/frange[0]), x1 = -log(rhs))
-    print(sol)
+    if oldscipy:
+        bcoef, coefinfo = fsolve(Bfun, args = (1./rhs), rtol = 1e-5, x0 = log(frange[1]/frange[0]), x1 = -log(rhs))
+        print(bcoef)
+        print(coefinfo)
+    else:
+        sol = root_scalar(Bfun, args = (1./rhs), rtol = 1e-5, x0 = log(frange[1]/frange[0]), x1 = -log(rhs))
+        print(sol)
+        bcoef = sol.root
     print("basic B = "+str(log(frange[1]/frange[0])))
     print("basic A = "+str(frange[0]))
-    bcoef = sol.root
     acoef = rhs/bcoef * (frange[1]-frange[0])
     ccoef = frange[0] - acoef
     print("acoef = "+str(acoef))
@@ -313,7 +322,9 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
             plots.coherence(binfreq, l_coherence_avbin, l_dcoherence_ensemble, l_dcoherence_bin,
                             l_phaselag_avbin, l_dphaselag_ensemble, l_dphaselag_bin, npoints, outfile = 'l_cobin')
 
-    
+
+
+            
 def spec_readall(infile = 'slabout', trange = [0.1,1e5]):
     '''
     makes spectra and cross-spectra out of the blslab output
