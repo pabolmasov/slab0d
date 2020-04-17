@@ -4,6 +4,7 @@ import matplotlib
 from pylab import *
 from matplotlib import interactive, use
 from scipy.interpolate import interp1d
+
 oldscipy = False
 if oldscipy:
     from scipy.optimize import fsolve
@@ -108,10 +109,10 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
             t=t[w] ; L=L[w] ; M=M[w] ; mdot=mdot[w] ; orot=orot[w]
         if k == 0:
             nt = size(t) ;  tspan = t.max() - t.min() 
-            dt = tspan / np.double(nt)
+            dt = tspan / double(nt)
             print("dt = "+str(dt)+"\n")
             #frequencies:
-            freq = np.fft.rfftfreq(nt, d=dt)
+            freq = fft.rfftfreq(nt, d=dt)
             print("no of freqs = "+str(size(freq)))
             print("nt = "+str(nt))
             nf = size(freq)
@@ -223,8 +224,8 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
         # l_phaselag_stdbin = zeros(nbins) # mean uncertainty
        
         print(str(nbins)+" bins\n")
-        freq1 =1./tspan/2. ; freq2=freq1*np.double(nt)/2.
-        x = arange(nbins+1)/np.double(nbins)
+        freq1 =1./tspan/2. ; freq2=freq1*double(nt)/2.
+        x = arange(nbins+1)/double(nbins)
         if(logbinning):
             df = (freq2-freq1) / double(nf) ; kfactor = 5 # k restricts the number of points per unit freqbin
             binfreq = logABC(x, [freq1, freq2], kfactor * double(nbins)/ double(nf))
@@ -364,11 +365,11 @@ def spec_readall(infile = 'slabout', trange = [0.1,1e5]):
         lBL_demean[k,:] = lBL[k,:] - lBL[k,:].mean()
         orot_demean[k,:] = orot[k,:] - orot[k,:].mean()
         
-    nt = np.size(t) ;  tspan = t.max() - t.min() 
-    dt = tspan / np.double(nt)
+    nt = size(t) ;  tspan = t.max() - t.min() 
+    dt = tspan / double(nt)
     #frequencies:
-    freq1 =1./tspan/2. ; freq2=freq1*np.double(nt)/2.
-    freq = np.fft.fftfreq(nt, dt)
+    freq1 =1./tspan/2. ; freq2=freq1*double(nt)/2.
+    freq = fft.fftfreq(nt, dt)
     
     # Fourier images: 
     mdot_f=2.*fft(mdot_demean)/mdot.sum()  # last axis is the FFT by default
