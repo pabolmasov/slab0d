@@ -1,15 +1,24 @@
 import matplotlib
 from matplotlib import rc
+import numpy.random as random
 from numpy import *
-from mslab import ifplot
+from numpy.fft import fft, ifft, fftfreq
+from numpy.random import rand, seed
+# from numpy import random
 from scipy.integrate import *
 from scipy.interpolate import interp1d
 from scipy.signal import *
 
-def flickgen(tmax, dt, nslope = 2, ifplot = False):
+'''
+routines making noise: flickering or Brownian
+'''
+
+def flickgen(tmax, dt, nslope = 2, ifplot = False, rseed = None):
     '''
     produces a correlated time series of a given length and PDS slope
     '''
+    if rseed is not None:
+        seed(seed=rseed)
     nx = int(floor(tmax/dt))
     t = arange(nx)*dt
     fwhite = rand(nx)
@@ -20,10 +29,12 @@ def flickgen(tmax, dt, nslope = 2, ifplot = False):
 
     return t, real(f)
 
-def brown(tmax, dt, tbreak):
+def brown(tmax, dt, tbreak, rseed = None):
     '''
     brownian noize with a break at tbreak (GM/c^3 units)
     '''
+    if rseed is not None:
+        seed(seed=rseed)
     nx = int(floor(tmax/dt))
     t = arange(nx)*dt
     fwhite = rand(nx)
@@ -33,3 +44,11 @@ def brown(tmax, dt, tbreak):
     f = ifft(fft(fwhite)*freqfilter)
     return t, real(f)
    
+def randomsin(mdot, sinefreq, samp, rseed = None):
+    '''
+    '''
+    if rseed is not None:
+        seed(seed=rseed)
+    sinedphi = rand()
+    s = lambda x: mdot * (1. + samp * sin(sinefreq * x + sinedphi))
+    return s

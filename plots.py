@@ -173,7 +173,7 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     # ax[0].errorbar(binfreqc[w], abs(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
     # ax[0].set_xlabel(r'$f$, Hz') ;
     ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [-pi,pi], 'g')
-    ax[0].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [-pi,pi], 'g--')
+    ax[0].plot([r**(-1.5)*alpha/tscale,r**(-1.5)*alpha/tscale], [-pi,pi], 'g--')
     ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [-pi,pi], 'g-.')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
@@ -187,8 +187,8 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     e1[-1][0].set_linestyle(':')
     ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18) ; ax[0].set_ylim(-pi,pi)
     ax[1].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,1.], 'g')
-    ax[1].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [0.,1.], 'g--')
-    ax[1].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,1.], 'g:')
+    ax[1].plot([r**(-1.5)*alpha/tscale,r**(-1.5)*alpha/tscale], [0.,1.], 'g--')
+    ax[1].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,1.], 'g-.')
     ax[1].errorbar(binfreqc[w], coherence,
                    xerr = binfreqs[w], yerr = dcoherence[w], fmt = 'k.')
     e1 = ax[1].errorbar(binfreqc[w]+binfreqs[w]*0.2, coherence[w],

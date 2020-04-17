@@ -8,7 +8,7 @@ from scipy.optimize import root_scalar
 
 import hdfoutput as hdf
 import plots as plots
-from mslab import r, ifzarr
+from mslab import r, ifzarr, tscale
 
 #Uncomment the following if you want to use LaTeX in figures
 rc('font',**{'family':'serif','serif':['Times']})
@@ -48,24 +48,31 @@ def logABC(x, frange, rhs):
     
     return acoef * exp( bcoef * x) + ccoef
 
-def viewcurve(infile, nentry):
-    trange = [1., 10.]
+def viewcurve(infile, nentry, trange = None):
     t, datalist = hdf.read(infile, nentry)
-    w = (t>trange[0]) & (t<trange[1])
     L, M, mdot, omega = datalist
+    if trange is not None:
+        w = (t>trange[0]) & (t<trange[1])
+        t=t[w] ; L=L[w] ; M=M[w] ; mdot=mdot[w] ; omega=omega[w]
     niter = shape(mdot)[0] ; nt = size(t)
     clf()
-    scatter(mdot, omega * r**1.5, c=t, s=1.)
+    scatter(mdot, omega * r**1.5*tscale, c=t, s=1.)
     xlabel(r'$\dot{m}$') ; ylabel(r'$\Omega/\Omega_{\rm K}$')
-    xlim(mdot[w].min(), mdot[w].max()) ; ylim(omega[w].min() * r**1.5, omega[w].max() * r**1.5)
+    xlim(mdot.min(), mdot.max()) ; ylim(omega.min() * r**1.5*tscale, omega.max() * r**1.5*tscale)
     savefig(infile+"_O.png")
-    Ldisc = mdot/r/8./pi
+    Ldisc = mdot/r/2.
     clf()
     fig = figure()
     plot(t, L, 'k-')
     plot(t, Ldisc, 'r:')
-    xlabel(r'$t$, s') ; ylabel(r'$L/L_{\rm Edd}$') ; xlim(trange[0],trange[1]) ; ylim(minimum(L,Ldisc)[w].min(), maximum(L, Ldisc)[w].max())
+    xlabel(r'$t$, s') ; ylabel(r'$L/L_{\rm Edd}$')
+    if trange is not None:
+        xlim(trange[0],trange[1]) 
+    ylim(minimum(L,Ldisc).min(), maximum(L, Ldisc).max())
+        
+    yscale('log')
     fig.set_size_inches(10, 3)
+    fig.tight_layout()
     savefig(infile+"_lBL.png")
     close("all")
 
@@ -87,6 +94,9 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
     for k in arange(nsims):
         t, datalist = hdf.read(infile, 0, entry = keys[k])
         L, M, mdot, orot = datalist
+        if trange is not None:
+            w = (t>trange[0]) * (t<trange[1])
+            t=t[w] ; L=L[w] ; M=M[w] ; mdot=mdot[w] ; orot=orot[w]
         if k == 0:
             nt = size(t) ;  tspan = t.max() - t.min() 
             dt = tspan / np.double(nt)
@@ -132,23 +142,24 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
     mdot_PDS_av /= (nsims) ; orot_PDS_av /= (nsims) ; l_PDS_av /= (nsims)
     o_cross_av /= (nsims) ; l_cross_av /= (nsims)
     # RMS:
-    mdot_PDS_std = sqrt(mdot_PDS_std / (nsims) - mdot_PDS_av**2) / sqrt(double(nsims-1))
-    orot_PDS_std = sqrt(orot_PDS_std / (nsims) - orot_PDS_av**2) / sqrt(double(nsims-1))
-    l_PDS_std = sqrt(l_PDS_std / (nsims) - l_PDS_av**2) / sqrt(double(nsims-1))
+    mdot_PDS_std = sqrt(mdot_PDS_std / double(nsims) - mdot_PDS_av**2) / sqrt(double(nsims-1))
+    orot_PDS_std = sqrt(orot_PDS_std / double(nsims) - orot_PDS_av**2) / sqrt(double(nsims-1))
+    l_PDS_std = sqrt(l_PDS_std / double(nsims) - l_PDS_av**2) / sqrt(double(nsims-1))
 
     o_coherence = abs(o_cross)/sqrt(orot_PDS_av*mdot_PDS_av)
     o_phaselag = angle(o_cross)
-    o_dcross_im = sqrt(o_dcross_im / (nsims) - o_cross_av.imag**2) / sqrt(double(nsims-1))
-    o_dcross_re = sqrt(o_dcross_re / (nsims) - o_cross_av.real**2) / sqrt(double(nsims-1))
-    o_dcoherence = 0.5 * ((o_dcross_im * abs(o_cross_av.imag) + o_dcross_re * abs(o_cross_av.real))/abs(o_cross_av)**2
-                          + orot_PDS_std / orot_PDS_av + mdot_PDS_std / mdot_PDS_std / orot_PDS_av) * o_coherence
-    o_dphaselag = (o_dcross_im * abs(o_cross_av.real) + o_dcross_re * abs(o_cross_av.imag))/abs(o_cross_av)
+    o_dcross_im = sqrt(o_dcross_im / double(nsims) - o_cross_av.imag**2) / sqrt(double(nsims-1))
+    o_dcross_re = sqrt(o_dcross_re / double(nsims) - o_cross_av.real**2) / sqrt(double(nsims-1))
+    o_dcoherence = 0.5 * ((o_dcross_im * abs(o_cross_av.imag) + o_dcross_re * abs(o_cross_av.real))*2./abs(o_cross_av)**2
+                          + orot_PDS_std / orot_PDS_av + mdot_PDS_std / mdot_PDS_av) * o_coherence
+    o_dphaselag = (o_dcross_im * abs(o_cross_av.real) + o_dcross_re * abs(o_cross_av.imag))/abs(o_cross_av)**2
     l_coherence = abs(l_cross)/sqrt(l_PDS_av*mdot_PDS_av)
     l_phaselag = angle(l_cross)
-    l_dcross_im = sqrt(l_dcross_im / (nsims) - l_cross_av.imag**2) / sqrt(double(nsims-1))
-    l_dcross_re = sqrt(l_dcross_re / (nsims) - l_cross_av.real**2) / sqrt(double(nsims-1))
-    l_dcoherence = 0.5 * ((l_dcross_im * abs(l_cross_av.imag) + l_dcross_re * abs(l_cross_av.real))/abs(l_cross_av)**2
-                          + l_PDS_std / l_PDS_av + mdot_PDS_std / mdot_PDS_std / orot_PDS_av)* l_coherence
+    l_dcross_im = sqrt(l_dcross_im / double(nsims) - l_cross_av.imag**2) / sqrt(double(nsims-1))
+    l_dcross_re = sqrt(l_dcross_re / double(nsims) - l_cross_av.real**2) / sqrt(double(nsims-1))
+    l_dcoherence = 0.5 * ((l_dcross_im * abs(l_cross_av.imag) + l_dcross_re * abs(l_cross_av.real))*2./abs(l_cross_av)**2
+                          + l_PDS_std / l_PDS_av + mdot_PDS_std / mdot_PDS_av)* l_coherence
+    l_dphaselag = (l_dcross_im * abs(l_cross_av.real) + l_dcross_re * abs(l_cross_av.imag))/abs(l_cross_av)**2
     
     w = freq > 0.
     
@@ -241,10 +252,10 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
 
         o_phaselag_avbin = angle(o_cross_avbin)      
         o_coherence_avbin = abs(o_cross_avbin)/sqrt(mdot_PDS_avbin * orot_PDS_avbin)
-        o_dphaselag_ensemble = ((sin(o_phaselag_avbin) * o_dcross_re_ensemble/abs(o_cross_avbin))**2 +
-                                (cos(o_phaselag_avbin) * o_dcross_im_ensemble/abs(o_cross_avbin))**2)
-        o_dphaselag_bin = ((sin(o_phaselag_avbin) * o_dcross_re_bin/abs(o_cross_avbin))**2 +
-                           (cos(o_phaselag_avbin) * o_dcross_im_bin/abs(o_cross_avbin))**2)
+        o_dphaselag_ensemble = sqrt((sin(o_phaselag_avbin) * o_dcross_re_ensemble/abs(o_cross_avbin))**2 +
+                                    (cos(o_phaselag_avbin) * o_dcross_im_ensemble/abs(o_cross_avbin))**2)
+        o_dphaselag_bin = sqrt((sin(o_phaselag_avbin) * o_dcross_re_bin/abs(o_cross_avbin))**2 +
+                               (cos(o_phaselag_avbin) * o_dcross_im_bin/abs(o_cross_avbin))**2)
         o_dcoherence_ensemble = o_coherence_avbin * ( (o_cross_avbin.real * o_dcross_re_ensemble +
                                                        o_cross_avbin.imag * o_dcross_im_ensemble) / abs(o_cross_avbin)**2+
                                                       0.5 * orot_dPDS_ensemble / orot_PDS_avbin +
@@ -255,10 +266,10 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
                                                  0.5 * mdot_dPDS_bin / mdot_PDS_avbin) 
         l_phaselag_avbin = angle(l_cross_avbin)
         l_coherence_avbin = abs(l_cross_avbin)/sqrt(mdot_PDS_avbin * l_PDS_avbin)
-        l_dphaselag_ensemble = ((sin(l_phaselag_avbin) * l_dcross_re_ensemble/abs(l_cross_avbin))**2 +
-                                (cos(l_phaselag_avbin) * l_dcross_im_ensemble/abs(l_cross_avbin))**2)
-        l_dphaselag_bin = ((sin(l_phaselag_avbin) * l_dcross_re_bin/abs(l_cross_avbin))**2 +
-                           (cos(l_phaselag_avbin) * l_dcross_im_bin/abs(l_cross_avbin))**2)       
+        l_dphaselag_ensemble = sqrt((sin(l_phaselag_avbin) * l_dcross_re_ensemble/abs(l_cross_avbin))**2 +
+                                    (cos(l_phaselag_avbin) * l_dcross_im_ensemble/abs(l_cross_avbin))**2)
+        l_dphaselag_bin = sqrt((sin(l_phaselag_avbin) * l_dcross_re_bin/abs(l_cross_avbin))**2 +
+                               (cos(l_phaselag_avbin) * l_dcross_im_bin/abs(l_cross_avbin))**2)       
         l_dcoherence_ensemble = l_coherence_avbin * ( (l_cross_avbin.real * l_dcross_re_ensemble +
                                                        l_cross_avbin.imag * l_dcross_im_ensemble) / abs(l_cross_avbin)**2+
                                                       0.5 * l_dPDS_ensemble / l_PDS_avbin +

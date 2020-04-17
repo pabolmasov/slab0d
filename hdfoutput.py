@@ -13,7 +13,7 @@ def entryname(n, ndig = 6):
     return entry
 
 def init(hname, t, mdot = None, alpha = None, tdepl = None,
-         nsims = None, nflick = None, tbreak = None): 
+         nsims = None, nflick = None, tbreak = None, regime = None): 
     '''
     creating the file and writing the time grid
     '''
@@ -22,6 +22,8 @@ def init(hname, t, mdot = None, alpha = None, tdepl = None,
     else:
         hfile = h5py.File(hname+".hdf5", "w")
     glo = hfile.create_group("globals")
+    if regime is not None:
+        glo.attrs['regime']  = regime
     if mdot is not None:
         glo.attrs['mdotmean']      = mdot
     if alpha is not None:

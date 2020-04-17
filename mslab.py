@@ -21,23 +21,28 @@ import hdfoutput as hdf
 # dl/dt = mdot * j - alpha * geff * M * R * (omega > omegaNS)
 # dm/dt = mdot - alpha * geff * M^2/L * R * (omega > omegaNS)
 
-# noise parameters:
-nflick = 2.
-tbreak = None
-
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-5
-tdepl = 1e2 # depletion time in GM/c^3 units
+alpha = 1e-4
+tdepl = 1e4 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
-pspin = 0.003 # spin period, s
+pspin = 0.3 # spin period, s
 tscale = 4.92594e-06 * mNS
 mscale = 6.41417e10 * mNS
 omegaNS = 2.*pi/pspin *tscale
 
-# initial conditions:
+# noise parameters:
+regimes = ['const', 'sine', 'flick', 'brown']
+regime = 'sine'
+
+nflick = 2.
+tbreak = 1.
+# accretion rate and amplitude:
 mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
 dmdot =  0.5 # relative variation dispersion
+
+sinefreq = 2.*pi * 10. * tscale # frequency of the sinusoudal variation
+samp = 0.5 # amplitude of the sine
 
 # time grid
 maxtimescale = (tdepl+1./alpha)
@@ -97,22 +102,25 @@ def singlerun(krepeat):
     l = m*omegaNS*r**2   # starting angular momentum
     t = 0. ; dt = 0.1 ; ctr = 0
     # setting the input mdot variability spectrum:
-    if (nflick is not None):
-        tint, mint = noize.flickgen(tmax, dtdyn, nslope = nflick)
+    if regime == 'flick':
+        tint, mint = noize.flickgen(tmax, dtdyn, nslope = nflick, rseed = krepeat)
         mmean = mint.mean() ; mrms = mint.std()
-    else:
-        if tbreak is not None:
-            tint, mint = noize.brown(tmax, dtdyn, tbreak)  # nslope = nflick)
-            mmean = mint.mean() ; mrms = mint.std()
-    if(nflick is not None) or (tbreak is not None):
-        mint = mdot * exp( (mint-mmean)/mrms * dmdot)
-        mconst = False
-        mfun = interp1d(tint, mint, bounds_error = False, fill_value=(mint[0], mint[-1]))
-    else:
+    if regime == 'brown':
+        tint, mint = noize.brown(tmax, dtdyn, tbreak, rseed = krepeat)  # nslope = nflick)
+        mmean = mint.mean() ; mrms = mint.std()
+    if regime == 'const':
         mconst = True
         meq = mdot * tdepl
         q = r**2/alpha/tdepl/j
         oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
+    if (regime == 'flick') | (regime == 'brown'):
+        mint = mdot * exp( (mint-mmean)/mrms * dmdot)
+        mconst = False
+        mfun = interp1d(tint, mint, bounds_error = False, fill_value=(mint[0], mint[-1]))
+    if regime == 'sine':
+        mfun = noize.randomsin(mdot, sinefreq, samp, rseed = krepeat)
+        mconst = False
+        
     # ASCII output:
     if ifasc:
         # ASCII output
@@ -121,13 +129,15 @@ def singlerun(krepeat):
         fout.write('# parameters:')
         fout.write('# mdot = '+str(mdot)+'\n')
         fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
-        if (nflick is not None):
+        if regime == 'flick':
             fout.write('# flickering with p = '+str(nflick)+'\n')
-        if (tbreak is not None):
+        if regime == 'brown':
             fout.write('# brownian with tbreak = '+str(tbreak)+'\n')
+        if regime == 'sine':
+            fout.write('# sine wave with omega = '+str(sinefreq)+' and amplitude '+str(samp)+'\n')
         fout.write('# t  mdot m lout orot\n')
     mdotar = zeros(nt) ; loutar = zeros(nt) ; mar = zeros(nt) ; orotar = zeros(nt)
-    while(t<tmax):           
+    while((t<tmax) & (ctr<nt)):           
         # halfstep:
         dt = 1./(100.*(mdot/m)+100.*(mdot*j/l)+1./tdepl+1./dtout)
         if mconst:
@@ -151,7 +161,7 @@ def singlerun(krepeat):
                 fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m*mscale)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
                 fout.flush()
             tstore += dtout
-            mdotar[ctr] = mdotcurrent1/4./pi ; loutar[ctr] = lout/ (4.*pi) ; mar[ctr] = m1 ; orotar[ctr] = orot
+            mdotar[ctr] = mdotcurrent1/ (4.*pi) ; loutar[ctr] = lout/ (4.*pi) ; mar[ctr] = m1 ; orotar[ctr] = orot
             ctr+=1
     if ifasc:
         fout.close()
@@ -163,9 +173,9 @@ def slab_evolution(nrepeat = 1, nproc = None):
     global hfile 
 
     hfile = hdf.init(hname, tar * tscale, mdot = mdot, alpha = alpha, tdepl = tdepl,
-                     nsims = nrepeat, nflick = nflick, tbreak = tbreak)
+                     nsims = nrepeat, nflick = nflick, tbreak = tbreak, regime = regime)
         
-    krepeat = linspace(0,nrepeat, num=nrepeat, endpoint=False, dtype=int)
+    krepeat = linspace(0, nrepeat, num=nrepeat, endpoint=False, dtype=int)
     print(krepeat)
     if nproc is not None:
         pool = multiprocessing.Pool(nproc)
