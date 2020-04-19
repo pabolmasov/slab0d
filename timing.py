@@ -1,8 +1,7 @@
+import numpy
+import numpy.fft
 from numpy import *
 from numpy.fft import *
-import matplotlib
-from pylab import *
-from matplotlib import interactive, use
 from scipy.interpolate import interp1d
 
 oldscipy = False
@@ -13,17 +12,21 @@ else:
 
 import hdfoutput as hdf
 import plots as plots
-from mslab import r, ifzarr, tscale
+from mslab import r, ifzarr, tscale, ifplot 
 
-#Uncomment the following if you want to use LaTeX in figures
-rc('font',**{'family':'serif','serif':['Times']})
-rc('mathtext',fontset='cm')
-rc('mathtext',rm='stix')
-rc('text', usetex=True)
-# #add amsmath to the preamble
-matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
-ioff()
-use('Agg')
+if ifplot:
+    import matplotlib
+    from pylab import *
+    from matplotlib import interactive, use
+    #Uncomment the following if you want to use LaTeX in figures
+    rc('font',**{'family':'serif','serif':['Times']})
+    rc('mathtext',fontset='cm')
+    rc('mathtext',rm='stix')
+    rc('text', usetex=True)
+    # #add amsmath to the preamble
+    matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
+    ioff()
+    use('Agg')
 
 def Cfun(x, f1, f2, rhs):
     return (f1-x)*log(abs((f2-x)/(f1-x)))+x - rhs
@@ -41,9 +44,9 @@ def logABC(x, frange, rhs):
     # finding C:
     #   brhs = (frange[1]-frange[0])/rhs
     if oldscipy:
-        bcoef, coefinfo = fsolve(Bfun, args = (1./rhs), rtol = 1e-5, x0 = log(frange[1]/frange[0]), x1 = -log(rhs))
+        bcoef = fsolve(Bfun, args = (1./rhs), xtol = 1e-5, x0 = log(frange[1]/frange[0]))
         print(bcoef)
-        print(coefinfo)
+        # print(coefinfo)
     else:
         sol = root_scalar(Bfun, args = (1./rhs), rtol = 1e-5, x0 = log(frange[1]/frange[0]), x1 = -log(rhs))
         print(sol)
@@ -65,28 +68,41 @@ def viewcurve(infile, nentry, trange = None):
         w = (t>trange[0]) & (t<trange[1])
         t=t[w] ; L=L[w] ; M=M[w] ; mdot=mdot[w] ; omega=omega[w]
     niter = shape(mdot)[0] ; nt = size(t)
-    clf()
-    scatter(mdot, omega * r**1.5*tscale, c=t, s=1.)
-    xlabel(r'$\dot{m}$') ; ylabel(r'$\Omega/\Omega_{\rm K}$')
-    xlim(mdot.min(), mdot.max()) ; ylim(omega.min() * r**1.5*tscale, omega.max() * r**1.5*tscale)
-    savefig(infile+"_O.png")
-    Ldisc = mdot/r/2.
-    clf()
-    fig = figure()
-    plot(t, L, 'k-')
-    plot(t, Ldisc, 'r:')
-    xlabel(r'$t$, s') ; ylabel(r'$L/L_{\rm Edd}$')
-    if trange is not None:
-        xlim(trange[0],trange[1]) 
-    ylim(minimum(L,Ldisc).min(), maximum(L, Ldisc).max())
+    if ifplot:
+        Ldisc = mdot/r/2.
+        clf()
+        fig = figure()
+        scatter(L+Ldisc, omega * r**1.5*tscale, c=t, s=1.)
+        cbar = colorbar()
+        cbar.ax.tick_params(labelsize=14, length=3, width=1., which='major')
+        cbar.set_label(r'$t$, s', fontsize=18)
+        xlabel(r'$L/L_{\rm Edd}$', fontsize = 20) ; ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
+        #        xlim(mdot.min(), mdot.max()) ;
+        ylim(omega.min() * r**1.5*tscale, omega.max() * r**1.5*tscale)
+        tick_params(labelsize=14, length=6, width=1., which='major')
+        tick_params(labelsize=14, length=3, width=1., which='minor')
+        fig.set_size_inches(5, 5)
+        fig.tight_layout()
+        savefig(infile+"_O.eps")
+        savefig(infile+"_O.png")
         
-    yscale('log')
-    fig.set_size_inches(10, 3)
-    fig.tight_layout()
-    savefig(infile+"_lBL.png")
-    close("all")
+        clf()
+        fig = figure()
+        plot(t, L, 'k-')
+        plot(t, Ldisc, 'r:')
+        xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$L/L_{\rm Edd}$', fontsize = 20)
+        ylim(minimum(L,Ldisc).min(), maximum(L, Ldisc).max())
+        #        yscale('log')
+        fig.set_size_inches(10, 4)
+        tick_params(labelsize=14, length=6, width=1., which='major')
+        tick_params(labelsize=14, length=3, width=1., which='minor')
+        fig.tight_layout()
+        savefig(infile+"_lBL.eps")
+        savefig(infile+"_lBL.png")
+        close("all")
 
-def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifplot = True, logbinning = False, simfilter = None, cotest = False):
+def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
+                    binning = 100, logbinning = False, simfilter = None, cotest = False):
     '''
     makes spectra and cross-spectra out of the blslab output
     reads the entries one by one, thus avoiding memory issues
@@ -112,7 +128,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
             dt = tspan / double(nt)
             print("dt = "+str(dt)+"\n")
             #frequencies:
-            freq = fft.rfftfreq(nt, d=dt)
+            freq = rfftfreq(nt, d=dt)
             print("no of freqs = "+str(size(freq)))
             print("nt = "+str(nt))
             nf = size(freq)
@@ -173,7 +189,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
     
     w = freq > 0.
     
-    if cotest:   
+    if cotest and ifplot:   
         clf()
         fig, ax = subplots(2,1)
         ax[0].errorbar(freq[w], phaselag[w],
@@ -231,7 +247,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10], binning = 100, ifp
             binfreq = logABC(x, [freq1, freq2], kfactor * double(nbins)/ double(nf))
             # (freq2-freq1) * exp(kfactor * double(nbins)/double(nf) * (x-1.))+freq1
             print(binfreq)
-            ii =input("BF")
+            #            ii =input("BF")
             # (freq2/freq1)**((np.arange(nbins+1)/np.double(nbins)))*freq1
             #  binfreq[0] = 0.
         else:
@@ -369,7 +385,7 @@ def spec_readall(infile = 'slabout', trange = [0.1,1e5]):
     dt = tspan / double(nt)
     #frequencies:
     freq1 =1./tspan/2. ; freq2=freq1*double(nt)/2.
-    freq = fft.fftfreq(nt, dt)
+    freq = fftfreq(nt, dt)
     
     # Fourier images: 
     mdot_f=2.*fft(mdot_demean)/mdot.sum()  # last axis is the FFT by default

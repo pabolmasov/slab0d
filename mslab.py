@@ -13,9 +13,6 @@ import multiprocessing
 from multiprocessing import Pool
 # from mpi4py import MPI
 
-import noize
-import hdfoutput as hdf
-
 # GM = c = kappa = 1
 
 # dl/dt = mdot * j - alpha * geff * M * R * (omega > omegaNS)
@@ -26,14 +23,14 @@ r = 6./(mNS/1.5) # NS radius in GM/c**2 units
 alpha = 1e-4
 tdepl = 1e4 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
-pspin = 0.3 # spin period, s
+pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS
 mscale = 6.41417e10 * mNS
 omegaNS = 2.*pi/pspin *tscale
 
 # noise parameters:
 regimes = ['const', 'sine', 'flick', 'brown']
-regime = 'sine'
+regime = 'flick'
 
 nflick = 2.
 tbreak = 1.
@@ -55,12 +52,15 @@ print(str(nt)+" points in time")
 tar = dtout * arange(nt)
 
 # outputs:
-ifplot = False # if we are plotting against the computer (disabled for now)
+ifplot = True # if we are plotting against the computer (disabled for now)
 ifasc = True # if we are writing ASCII output
 ifzarr = True
 hname = 'slabout' # output HDF5 file name
 if ifplot:
     import plots
+
+import noize
+import hdfoutput as hdf
 
 def onestep(m, l, mdot):
     '''

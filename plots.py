@@ -130,18 +130,32 @@ def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, mdot_dpdsbin1, lBL_pdsbin, lBL_dpdsb
     savefig(outfile + '.eps')
     close()
 
-def pds_doubled(freq1, freq2, mdot_pdsbin, mdot_dpdsbin1,  mdot_dpdsbin2, lBL_pdsbin, lBL_dpdsbin1, lBL_dpdsbin2, npoints, outfile):
-    # for a double error source,  ensemble variations and variability within the frequency bin
-    freqc = (freq1+freq2)/2.
-    freqs = (freq2-freq1)/2.    
+def multipds_stored(prefix):
+    lines1 = loadtxt(prefix+'_osp.dat', comments='#')
+    #     f1, f2, mdot, dmdot, d1mdot, y, dy, dy1, c, dc, dc1, p, dp, dp1, np
+    f1_1 = lines1[:,0] ; f1_2 = lines1[:,1]
+    mpds = lines1[:,2] ; dmpds = lines1[:,3]+lines1[:,4]
+    opds = lines1[:,5] ; dopds = lines1[:,6]+lines1[:,7]
+    lines2 = loadtxt(prefix+'_lsp.dat', comments='#')
+    f2_1 = lines2[:,0] ; f2_2 = lines2[:,1]
+    lpds = lines2[:,5] ; dlpds = lines2[:,6]+lines2[:,7]
+    multipds([f1_1, f2_1, f1_1], [f1_2, f2_2, f1_2], [mpds, lpds, opds], [dmpds, dlpds, dopds], prefix+'_pds3')
+    
+def multipds(freq1, freq2, pds, dpds, outfile):
+    nsp, rest = shape(freq1)
+    formats = ['ko', 'rs', 'gd', 'bx']
     clf()
-    errorbar(freqc, mdot_pdsbin, xerr = freqs, yerr = mdot_dpdsbin1, fmt = 'gs', linewidth = 3.)
-    errorbar(freqc, mdot_pdsbin, xerr = freqs, yerr = mdot_dpdsbin2, fmt = 'ks')
-    errorbar(freqc, lBL_pdsbin, xerr = freqs, yerr = lBL_dpdsbin1, fmt = 'gd', linewidth = 3.)
-    errorbar(freqc, lBL_pdsbin, xerr = freqs, yerr = lBL_dpdsbin2, fmt = 'kd')
-    xlim([freqc.min()/2., freq2.max()])
+    fig=figure()
+    for k in arange(nsp):
+        freqc = (freq1[k]+freq2[k])/2.
+        freqs = (freq2[k]-freq1[k])/2.    
+        errorbar(freqc, pds[k] * freqc, xerr = freqs, yerr = dpds[k], fmt = formats[k], linewidth = 1.)
     xscale('log') ; yscale('log')
-    xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
+    xlabel(r'$f$, Hz', fontsize=20) ; ylabel(r'$f \, PDS$', fontsize=20)
+    tick_params(labelsize=14, length=6, width=1., which='major')
+    tick_params(labelsize=14, length=4, width=1., which='minor')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.eps')
     close()
@@ -160,6 +174,20 @@ def phaselag(binfreq, phaselag_bin, dphaselag_bin, mmdot_crossbin, npoints):
     savefig('phaselag.png')
     savefig('phaselag.eps')
     close()
+
+def plot_stored(ascfile):
+    lines = loadtxt(ascfile+'.dat', comments='#')
+    #     f1, f2, mdot, dmdot, d1mdot, y, dy, dy1, c, dc, dc1, p, dp, dp1, np
+    f1 = lines[:,0] ; f2 = lines[:,1]
+    binfreq = concatenate([f1, f2[-1:]])
+    mdot = lines[:,2] ; dmdot = lines[:,3] ; d1mdot = lines[:,4]
+    y = lines[:,5] ; dy = lines[:,6]  ; d1y = lines[:,7]
+    c = lines[:,8] ; dc = lines[:,9] ; dc1 = lines[:,10]
+    p = lines[:,11] ; dp = lines[:,12] ; dp1 = lines[:,13]
+    np = lines[:,14]
+    
+    coherence(binfreq, c, dc, dc1, p, dp, dp1, np, outfile = ascfile+'_c')
+    pds(binfreq, mdot, dmdot, d1mdot, y, dy, d1y, np, outfile = ascfile+'_pds')
 
 def coherence(binfreq, coherence, dcoherence, dcoherence1,
               phaselag, dphaselag, dphaselag1,
@@ -200,7 +228,7 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
     ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
     ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-    fig.set_size_inches(10, 6)
+    fig.set_size_inches(5, 6)
     fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.eps')

@@ -1,5 +1,7 @@
-import matplotlib
-from matplotlib import rc
+from mslab import ifplot 
+if ifplot:
+    import matplotlib
+    from matplotlib import rc
 import numpy.random as random
 from numpy import *
 from numpy.fft import fft, ifft, fftfreq
