@@ -193,10 +193,7 @@ def spec_onevar(varno, infile = 'slabout', trange = [0.0, 1e10], binning = 100, 
         fig.tight_layout()
         savefig('coherence.png')
         savefig('coherence.eps')
-        close('all')
-    
-            
-    
+        close('all')    
         
 def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                     binning = 100, logbinning = False, simfilter = None, cotest = False):
@@ -235,12 +232,17 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
             orot_PDS_std = zeros(nf, dtype = double)
             l_PDS_av = zeros(nf, dtype = double)
             l_PDS_std = zeros(nf, dtype = double)
+            mass_PDS_av = zeros(nf, dtype = double)
+            mass_PDS_std = zeros(nf, dtype = double)
             o_cross_av = zeros(nf, dtype = complex)
             o_dcross_im = zeros(nf, dtype = double)
             o_dcross_re = zeros(nf, dtype = double)
             l_cross_av = zeros(nf, dtype = complex)
             l_dcross_im = zeros(nf, dtype = double)
             l_dcross_re = zeros(nf, dtype = double)
+            m_cross_av = zeros(nf, dtype = complex)
+            m_dcross_im = zeros(nf, dtype = double)
+            m_dcross_re = zeros(nf, dtype = double)
         # Fourier images
         mdot_f=2.*rfft(mdot-mdot.mean())/mdot.sum()  # last axis is the FFT by default
         #        lBL_f=2.*fft(lBL_demean)/lBL.sum()
@@ -250,24 +252,29 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
             orot = 1e-3 * mdotfun(t+tlag)
         orot_f = 2.*rfft(orot-orot.mean())/orot.sum()
         l_f = 2.*rfft(L-L.mean())/L.sum()
-        o_cross = mdot_f * conj(orot_f)
-        mdot_PDS = abs(mdot_f)**2 ; orot_PDS = abs(orot_f)**2 ; l_PDS = abs(l_f)**2
+        mass_f = 2.*rfft(M-M.mean())/M.sum()
+
+        mdot_PDS = abs(mdot_f)**2 ; orot_PDS = abs(orot_f)**2 ; l_PDS = abs(l_f)**2 ; mass_PDS = abs(mass_f)**2
         mdot_PDS_av += mdot_PDS ; mdot_PDS_std += mdot_PDS**2
         orot_PDS_av += orot_PDS ; orot_PDS_std += orot_PDS**2
+        mass_PDS_av += mass_PDS ; mass_PDS_std += mass_PDS**2
         l_PDS_av += l_PDS ; l_PDS_std += l_PDS**2
         o_cross = copy(mdot_f * conj(orot_f))
         l_cross = copy(mdot_f * conj(l_f))
-        o_cross_av += o_cross ;     l_cross_av += l_cross
+        m_cross = copy(mdot_f * conj(mass_f))
+        o_cross_av += o_cross ;     l_cross_av += l_cross ;     m_cross_av += m_cross
         o_dcross_im += o_cross.imag**2 ;   o_dcross_re += o_cross.real**2 # dispersions of imaginary and real components
         l_dcross_im += l_cross.imag**2 ;   l_dcross_re += l_cross.real**2
+        m_dcross_im += l_cross.imag**2 ;   m_dcross_re += l_cross.real**2
 
     # mean values:
-    mdot_PDS_av /= (nsims) ; orot_PDS_av /= (nsims) ; l_PDS_av /= (nsims)
-    o_cross_av /= (nsims) ; l_cross_av /= (nsims)
+    mdot_PDS_av /= (nsims) ; orot_PDS_av /= (nsims) ; l_PDS_av /= (nsims) ; mass_PDS_av /= (nsims)
+    o_cross_av /= (nsims) ; l_cross_av /= (nsims) ; m_cross_av /= (nsims)
     # RMS:
     mdot_PDS_std = sqrt(mdot_PDS_std / double(nsims) - mdot_PDS_av**2) / sqrt(double(nsims-1))
     orot_PDS_std = sqrt(orot_PDS_std / double(nsims) - orot_PDS_av**2) / sqrt(double(nsims-1))
     l_PDS_std = sqrt(l_PDS_std / double(nsims) - l_PDS_av**2) / sqrt(double(nsims-1))
+    mass_PDS_std = sqrt(mass_PDS_std / double(nsims) - mass_PDS_av**2) / sqrt(double(nsims-1))
 
     o_coherence = abs(o_cross)/sqrt(orot_PDS_av*mdot_PDS_av)
     o_phaselag = angle(o_cross)
@@ -276,6 +283,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
     o_dcoherence = 0.5 * ((o_dcross_im * abs(o_cross_av.imag) + o_dcross_re * abs(o_cross_av.real))*2./abs(o_cross_av)**2
                           + orot_PDS_std / orot_PDS_av + mdot_PDS_std / mdot_PDS_av) * o_coherence
     o_dphaselag = (o_dcross_im * abs(o_cross_av.real) + o_dcross_re * abs(o_cross_av.imag))/abs(o_cross_av)**2
+
     l_coherence = abs(l_cross)/sqrt(l_PDS_av*mdot_PDS_av)
     l_phaselag = angle(l_cross)
     l_dcross_im = sqrt(l_dcross_im / double(nsims) - l_cross_av.imag**2) / sqrt(double(nsims-1))
@@ -284,6 +292,14 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                           + l_PDS_std / l_PDS_av + mdot_PDS_std / mdot_PDS_av)* l_coherence
     l_dphaselag = (l_dcross_im * abs(l_cross_av.real) + l_dcross_re * abs(l_cross_av.imag))/abs(l_cross_av)**2
     
+    m_coherence = abs(m_cross)/sqrt(mass_PDS_av*mdot_PDS_av)
+    m_phaselag = angle(m_cross)
+    m_dcross_im = sqrt(m_dcross_im / double(nsims) - m_cross_av.imag**2) / sqrt(double(nsims-1))
+    m_dcross_re = sqrt(m_dcross_re / double(nsims) - m_cross_av.real**2) / sqrt(double(nsims-1))
+    m_dcoherence = 0.5 * ((m_dcross_im * abs(m_cross_av.imag) + m_dcross_re * abs(m_cross_av.real))*2./abs(m_cross_av)**2
+                          + mass_PDS_std / mass_PDS_av + mdot_PDS_std / mdot_PDS_av)* m_coherence
+    m_dphaselag = (m_dcross_im * abs(m_cross_av.real) + m_dcross_re * abs(m_cross_av.imag))/abs(m_cross_av)**2
+
     w = freq > 0.
     
     if cotest and ifplot:   
@@ -314,27 +330,20 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
     if binning is not None:
         nbins = binning
         npoints = zeros(nbins, dtype = integer)
-        mdot_PDS_avbin = zeros(nbins) ; orot_PDS_avbin = zeros(nbins) ; l_PDS_avbin = zeros(nbins)
-        mdot_dPDS_bin = zeros(nbins) ; orot_dPDS_bin = zeros(nbins) ; l_dPDS_bin = zeros(nbins)
+        mdot_PDS_avbin = zeros(nbins) ; orot_PDS_avbin = zeros(nbins) ; l_PDS_avbin = zeros(nbins) ; mass_PDS_avbin = zeros(nbins)
+        mdot_dPDS_bin = zeros(nbins) ; orot_dPDS_bin = zeros(nbins) ; l_dPDS_bin = zeros(nbins) ; mass_dPDS_bin = zeros(nbins)
         # --variation within the bin
-        mdot_dPDS_ensemble = zeros(nbins) ; orot_dPDS_ensemble = zeros(nbins) ; l_dPDS_ensemble = zeros(nbins)
+        mdot_dPDS_ensemble = zeros(nbins) ; orot_dPDS_ensemble = zeros(nbins) ; l_dPDS_ensemble = zeros(nbins) ; mass_dPDS_ensemble = zeros(nbins)
         # --mean uncertainty
         o_cross_avbin = zeros(nbins, dtype = complex) ; o_coherence_avbin = zeros(nbins)
         o_dcross_im_ensemble = zeros(nbins) ; o_dcross_re_ensemble = zeros(nbins)
         o_dcross_im_bin = zeros(nbins) ; o_dcross_re_bin = zeros(nbins)
-        #        o_dcoherence_bin = zeros(nbins) # variation within the bin
-        #        o_dcoherence_ensemble = zeros(nbins) # mean uncertainty
-        #  o_phaselag_bin = zeros(nbins)
-        # o_dphaselag_avbin = zeros(nbins) # variation within the bin
-        # o_phaselag_stdbin = zeros(nbins) # mean uncertainty
-        l_cross_avbin = zeros(nbins, dtype = complex) ; o_coherence_avbin = zeros(nbins)
+        l_cross_avbin = zeros(nbins, dtype = complex) ; l_coherence_avbin = zeros(nbins)
         l_dcross_im_ensemble = zeros(nbins) ; l_dcross_re_ensemble = zeros(nbins)
         l_dcross_im_bin = zeros(nbins) ; l_dcross_re_bin = zeros(nbins)
-        # l_dcoherence_avbin = zeros(nbins) # variation within the bin
-        # l_coherence_stdbin = zeros(nbins) # mean uncertainty
-        # l_phaselag_avbin = zeros(nbins)
-        # l_dphaselag_avbin = zeros(nbins) # variation within the bin
-        # l_phaselag_stdbin = zeros(nbins) # mean uncertainty
+        m_cross_avbin = zeros(nbins, dtype = complex) ; m_coherence_avbin = zeros(nbins)
+        m_dcross_im_ensemble = zeros(nbins) ; m_dcross_re_ensemble = zeros(nbins)
+        m_dcross_im_bin = zeros(nbins) ; m_dcross_re_bin = zeros(nbins)
        
         print(str(nbins)+" bins\n")
         freq1 =1./tspan/2. ; freq2=freq1*double(nt)/2.
@@ -362,6 +371,9 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
             l_PDS_avbin[kb]=l_PDS_av[freqrange].mean() # intra-bin variations
             l_dPDS_ensemble[kb]=l_PDS_std[freqrange].mean() # ensemble variations
             l_dPDS_bin[kb]=l_PDS_av[freqrange].std() / sqrt(double(npoints[kb]-1))
+            mass_PDS_avbin[kb]=mass_PDS_av[freqrange].mean() # intra-bin variations
+            mass_dPDS_ensemble[kb]=mass_PDS_std[freqrange].mean() # ensemble variations
+            mass_dPDS_bin[kb]=mass_PDS_av[freqrange].std() / sqrt(double(npoints[kb]-1))
             o_cross_avbin[kb]=o_cross_av[freqrange].mean()
             o_dcross_im_ensemble[kb] = o_dcross_im[freqrange].mean()
             o_dcross_im_bin[kb] = o_cross_av.imag[freqrange].std() / sqrt(double(npoints[kb]-1))
@@ -372,6 +384,11 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
             l_dcross_im_bin[kb] = l_cross_av.imag[freqrange].std() / sqrt(double(npoints[kb]-1))
             l_dcross_re_ensemble[kb] = l_dcross_re[freqrange].mean()
             l_dcross_re_bin[kb] = l_cross_av.real[freqrange].std() / sqrt(double(npoints[kb]-1))
+            m_cross_avbin[kb]=m_cross_av[freqrange].mean()
+            m_dcross_im_ensemble[kb] = m_dcross_im[freqrange].mean()
+            m_dcross_im_bin[kb] = m_cross_av.imag[freqrange].std() / sqrt(double(npoints[kb]-1))
+            m_dcross_re_ensemble[kb] = m_dcross_re[freqrange].mean()
+            m_dcross_re_bin[kb] = m_cross_av.real[freqrange].std() / sqrt(double(npoints[kb]-1))
 
         o_phaselag_avbin = angle(o_cross_avbin)      
         o_coherence_avbin = abs(o_cross_avbin)/sqrt(mdot_PDS_avbin * orot_PDS_avbin)
@@ -401,6 +418,20 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                                                   l_cross_avbin.imag * l_dcross_im_bin) / abs(l_cross_avbin)**2+
                                                  0.5 * l_dPDS_bin / l_PDS_avbin +
                                                  0.5 * mdot_dPDS_bin / mdot_PDS_avbin) 
+        m_phaselag_avbin = angle(m_cross_avbin)
+        m_coherence_avbin = abs(m_cross_avbin)/sqrt(mdot_PDS_avbin * mass_PDS_avbin)
+        m_dphaselag_ensemble = sqrt((sin(m_phaselag_avbin) * m_dcross_re_ensemble/abs(m_cross_avbin))**2 +
+                                    (cos(m_phaselag_avbin) * m_dcross_im_ensemble/abs(m_cross_avbin))**2)
+        m_dphaselag_bin = sqrt((sin(m_phaselag_avbin) * m_dcross_re_bin/abs(m_cross_avbin))**2 +
+                               (cos(m_phaselag_avbin) * m_dcross_im_bin/abs(m_cross_avbin))**2)       
+        m_dcoherence_ensemble = m_coherence_avbin * ( (m_cross_avbin.real * m_dcross_re_ensemble +
+                                                       m_cross_avbin.imag * m_dcross_im_ensemble) / abs(m_cross_avbin)**2+
+                                                      0.5 * m_dPDS_ensemble / m_PDS_avbin +
+                                                      0.5 * mdot_dPDS_ensemble / mdot_PDS_avbin) 
+        m_dcoherence_bin = l_coherence_avbin * ( (m_cross_avbin.real * m_dcross_re_bin +
+                                                  m_cross_avbin.imag * m_dcross_im_bin) / abs(m_cross_avbin)**2+
+                                                 0.5 * m_dPDS_bin / m_PDS_avbin +
+                                                 0.5 * mdot_dPDS_bin / mdot_PDS_avbin) 
        
         # ASCII output:
         fout = open(infile+'_osp.dat', 'w')
@@ -425,6 +456,17 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                        +str(npoints[k])+"\n")
             fout.flush()
         fout.close()
+        fout = open(infile+'_msp.dat', 'w')
+        fout.write("# f1  f2  mdot dmdot d1mdot M dM d1M coherence dcoherence d1coherence  phaselag dphaselag d1phaselag npoints\n")
+        for k in arange(nbins):
+            fout.write(str(binfreq[k])+" "+str(binfreq[k+1])+" "
+                       +str(mdot_PDS_avbin[k])+" "+str(mdot_dPDS_ensemble[k])+" "+str(mdot_dPDS_bin[k])+" "
+                       +str(mass_PDS_avbin[k])+" "+str(mass_dPDS_ensemble[k])+" "+str(mass_dPDS_bin[k])+" "
+                       +str(m_coherence_avbin[k])+" "+str(m_dcoherence_ensemble[k])+" "+str(m_dcoherence_bin[k])+" "
+                       +str(m_phaselag_avbin[k])+" "+str(m_dphaselag_ensemble[k])+" "+str(m_dphaselag_bin[k])+" "
+                       +str(npoints[k])+"\n")
+            fout.flush()
+        fout.close()
         if ifplot:
             plots.pds(binfreq, mdot_PDS_avbin, mdot_dPDS_ensemble, mdot_dPDS_bin,
                               orot_PDS_avbin, orot_dPDS_ensemble, orot_dPDS_bin, npoints, outfile = 'o_pdss')
@@ -435,8 +477,8 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                             o_phaselag_avbin, o_dphaselag_ensemble, o_dphaselag_bin, npoints, outfile = 'o_cobin')
             plots.coherence(binfreq, l_coherence_avbin, l_dcoherence_ensemble, l_dcoherence_bin,
                             l_phaselag_avbin, l_dphaselag_ensemble, l_dphaselag_bin, npoints, outfile = 'l_cobin')
-
-
+            plots.coherence(binfreq, m_coherence_avbin, m_dcoherence_ensemble, m_dcoherence_bin,
+                            m_phaselag_avbin, m_dphaselag_ensemble, m_dphaselag_bin, npoints, outfile = 'm_cobin')
 
             
 def spec_readall(infile = 'slabout', trange = [0.1,1e5]):
