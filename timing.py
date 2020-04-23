@@ -12,7 +12,7 @@ else:
 
 import hdfoutput as hdf
 import plots as plots
-from mslab import r, ifzarr, tscale, ifplot 
+from mslab import r, ifzarr, tscale, ifplot, tdepl, alpha
 
 if ifplot:
     import matplotlib
@@ -70,37 +70,134 @@ def viewcurve(infile, nentry, trange = None):
     niter = shape(mdot)[0] ; nt = size(t)
     if ifplot:
         Ldisc = mdot/r/2.
+        oepi = 2.*omega * r**1.5*tscale * L # epicyclic frequency
         clf()
-        fig = figure()
-        scatter(L+Ldisc, omega * r**1.5*tscale, c=t, s=1.)
-        cbar = colorbar()
-        cbar.ax.tick_params(labelsize=14, length=3, width=1., which='major')
-        cbar.set_label(r'$t$, s', fontsize=18)
-        xlabel(r'$L/L_{\rm Edd}$', fontsize = 20) ; ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
+        fig, ax = subplots(2,1)
+        #   subplot(2,1,0)
+        sc1 = ax[0].scatter(L+Ldisc, omega * r**1.5*tscale, c=t, s=1.)
+        cbar1 = colorbar(sc1, ax=ax[0])
+        cbar1.ax.tick_params(labelsize=14, length=3, width=1., which='major')
+        cbar1.set_label(r'$t$, s', fontsize=18)
+        ax[0].set_ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
+        # '$\displaystyle \frac{\Omega}{\Omega_{\rm K}}$', fontsize = 20)
+        #    subplot(2,1,1)
+        sc2 = ax[1].scatter(L+Ldisc, oepi, c=t, s=1.)
+        cbar2 = colorbar(sc2, ax=ax[1])
+        cbar2.ax.tick_params(labelsize=14, length=3, width=1., which='major')
+        cbar2.set_label(r'$t$, s', fontsize=18)
+        ax[1].set_xlabel(r'$L/L_{\rm Edd}$', fontsize = 20)
+        ax[1].set_ylabel(r'$\Omega_{\rm e}/\Omega_{\rm K}$', fontsize = 20)
+        # '$\displaystyle 2\frac{\Omega}{\Omega_{\rm K}}\frac{L}{L_{\rm Edd}}$', fontsize = 20)
         #        xlim(mdot.min(), mdot.max()) ;
-        ylim(omega.min() * r**1.5*tscale, omega.max() * r**1.5*tscale)
-        tick_params(labelsize=14, length=6, width=1., which='major')
-        tick_params(labelsize=14, length=3, width=1., which='minor')
-        fig.set_size_inches(5, 5)
+        ax[0].set_ylim(omega.min() * r**1.5*tscale, omega.max() * r**1.5*tscale)
+        ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+        ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+        ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+        ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+        fig.set_size_inches(5, 10)
         fig.tight_layout()
-        savefig(infile+"_O.eps")
+        savefig(infile+"_O.pdf")
         savefig(infile+"_O.png")
-        
+
+        wpos = (L > 0.)
         clf()
         fig = figure()
-        plot(t, L, 'k-')
+        plot(t[wpos], L[wpos], 'k-')
         plot(t, Ldisc, 'r:')
         xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$L/L_{\rm Edd}$', fontsize = 20)
-        ylim(minimum(L,Ldisc).min(), maximum(L, Ldisc).max())
-        #        yscale('log')
+        ylim(minimum(L,Ldisc)[wpos].min(), maximum(L, Ldisc)[wpos].max())
+        yscale('log')
         fig.set_size_inches(10, 4)
         tick_params(labelsize=14, length=6, width=1., which='major')
         tick_params(labelsize=14, length=3, width=1., which='minor')
         fig.tight_layout()
         savefig(infile+"_lBL.eps")
         savefig(infile+"_lBL.png")
+        savefig(infile+"_lBL.pdf")
         close("all")
 
+def spec_onevar(varno, infile = 'slabout', trange = [0.0, 1e10], binning = 100, logbinning = False, simfilter = None, cotest = False):
+    '''
+    makes spectra and cross-spectra for a given parameter of the output
+    varno is the number of the output variable: 0 is luminosity, 1 is mass, 2 is mdot, 3 is orot
+    '''
+    keys = hdf.keyshow(infile)
+    nsims = size(keys)-1 # one key points to globals
+
+    if simfilter is not None:
+        keys = keys[simfilter[0]:simfilter[1]]
+        nsims  = size(keys)-1
+    for k in arange(nsims):
+        t, datalist = hdf.read(infile, 0, entry = keys[k])
+        v = datalist[varno] ; mdot = datalist[2]
+        if trange is not None:
+            w = (t>trange[0]) * (t<trange[1])
+            t=t[w] ; v=v[w] ; mdot=mdot[w]
+        if k == 0:
+            nt = size(t) ;  tspan = t.max() - t.min() 
+            dt = tspan / double(nt)
+            print("dt = "+str(dt)+"\n")
+            #frequencies:
+            freq = rfftfreq(nt, d=dt)
+            print("no of freqs = "+str(size(freq)))
+            print("nt = "+str(nt))
+            nf = size(freq)
+            mdot_PDS_av = zeros(nf, dtype = double)
+            mdot_PDS_std = zeros(nf, dtype = double)
+            v_PDS_av = zeros(nf, dtype = double)
+            v_PDS_std = zeros(nf, dtype = double)
+            v_cross_av = zeros(nf, dtype = complex)
+            v_dcross_im = zeros(nf, dtype = double)
+            v_dcross_re = zeros(nf, dtype = double)
+        # Fourier images
+        mdot_f=2.*rfft(mdot-mdot.mean())/mdot.sum()  # last axis is the FFT by default
+        v_f = 2.*rfft(v-v.mean())/v.sum()
+        mdot_PDS = abs(mdot_f)**2 ; v_PDS = abs(v_f)**2
+        mdot_PDS_av += mdot_PDS ; mdot_PDS_std += mdot_PDS**2
+        v_PDS_av += v_PDS ; v_PDS_std += v_PDS**2
+        v_cross = copy(mdot_f * conj(v_f))
+        v_cross_av += v_cross 
+        v_dcross_im += v_cross.imag**2 ;   v_dcross_re += v_cross.real**2 # dispersions of imaginary and real components
+    # mean values:
+    mdot_PDS_av /= (nsims) ; v_PDS_av /= (nsims) ;    v_cross_av /= (nsims)
+    # RMS:
+    mdot_PDS_std = sqrt(mdot_PDS_std / double(nsims) - mdot_PDS_av**2) / sqrt(double(nsims-1))
+    v_PDS_std = sqrt(v_PDS_std / double(nsims) - v_PDS_av**2) / sqrt(double(nsims-1))
+    v_coherence = abs(v_cross)/sqrt(v_PDS_av*mdot_PDS_av)
+    v_phaselag = angle(v_cross)
+    v_dcross_im = sqrt(v_dcross_im / double(nsims) - v_cross_av.imag**2) / sqrt(double(nsims-1))
+    v_dcross_re = sqrt(v_dcross_re / double(nsims) - v_cross_av.real**2) / sqrt(double(nsims-1))
+    v_dcoherence = 0.5 * ((v_dcross_im * abs(v_cross_av.imag) + v_dcross_re * abs(v_cross_av.real))*2./abs(v_cross_av)**2
+                          + v_PDS_std / v_PDS_av + mdot_PDS_std / mdot_PDS_av) * v_coherence
+    v_dphaselag = (v_dcross_im * abs(v_cross_av.real) + v_dcross_re * abs(v_cross_av.imag))/abs(v_cross_av)**2
+
+    if ifplot:
+        w = (freq > 0.)
+        clf()
+        fig, ax = subplots(2,1)
+        ax[0].errorbar(freq[w], v_phaselag[w],
+                       yerr =  v_dphaselag[w], fmt = 'k.')
+        ax[0].plot(freq[w], arctan(2.*pi*freq[w]*tdepl*tscale), 'c-', linewidth = 3)
+        ax[0].plot(freq[w], freq[w]*0., 'r-')
+        ax[0].plot(freq[w], freq[w]*0.+pi/2., 'r-')
+        ax[0].plot(freq[w], freq[w]*0.+pi, 'r-')
+        ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
+        ax[1].errorbar(freq[w], v_coherence[w], yerr = v_dcoherence[w], fmt = 'k.')
+        ax[1].set_xscale('log') ; ax[0].set_ylim(-pi,pi) ; ax[1].set_ylim(-pi,pi)
+        ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
+        ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+        ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+        ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+        ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+        fig.set_size_inches(5, 6)
+        fig.tight_layout()
+        savefig('coherence.png')
+        savefig('coherence.eps')
+        close('all')
+    
+            
+    
+        
 def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                     binning = 100, logbinning = False, simfilter = None, cotest = False):
     '''

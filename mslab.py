@@ -24,9 +24,11 @@ alpha = 1e-4
 tdepl = 1e4 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
 pspin = 0.003 # spin period, s
-tscale = 4.92594e-06 * mNS
-mscale = 6.41417e10 * mNS
+tscale = 4.92594e-06 * mNS # time scale, s
+mscale = 6.41417e10 * mNS # mass scale, g
 omegaNS = 2.*pi/pspin *tscale
+
+print("q = "+str(r**2/alpha/tdepl/j))
 
 # noise parameters:
 regimes = ['const', 'sine', 'flick', 'brown']
@@ -46,7 +48,7 @@ maxtimescale = (tdepl+1./alpha)
 mintimescale = 1./(1./tdepl+alpha)
 dtdyn = r**1.5
 dtout = minimum(0.3*dtdyn,3e-2*mintimescale) # this gives 10^5 data points
-tmax = 10.*maxtimescale
+tmax = 30.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
 tar = dtout * arange(nt)
@@ -69,12 +71,12 @@ def onestep(m, l, mdot):
     output: dm/dt, dl/dt, luminosity release, cos(theta) for the flow
     '''
     omega = l /m /r**2
-    geff = maximum(1./r**2 - omega**2*r, 0.)
-    dl = mdot * j - l / tdepl - alpha * geff * m * r * sign(omega - omegaNS)
-    dm = mdot - m / tdepl
+    geff = 1./r**2 - omega**2*r
+    dl = mdot * j - l/tdepl - alpha * geff * m * r * sign(omega - omegaNS)
+    dm = mdot - m/tdepl
     # alpha * geff * m**2/l * (omega > omegaNS)
     #    a = alpha * m * r / omega * (omega-omegaNS)**2
-    lout = geff*alpha*m * r * abs(omega - omegaNS) + m/tdepl * (omega**2-omegaNS**2) * r**2 /2.
+    lout = alpha * r * geff * (omega - omegaNS) *m # + 1./tdepl * (omega**2-omegaNS**2) * r**2 /2.) * m 
     a = lout / geff
     cth = a/(4.*pi*r**2)
     
@@ -98,8 +100,8 @@ def singlerun(krepeat):
     print("simulation No"+str(krepeat))
     # initial conditions:
     tstore = 0.;
-    m = mdot * tdepl * 0.1 # starting mass, 10% from equilibrium
-    l = m*omegaNS*r**2   # starting angular momentum
+    m =  0.1*mdot*tdepl # starting mass, 10% from equilibrium
+    l = omegaNS*r**2*m   # starting angular momentum
     t = 0. ; dt = 0.1 ; ctr = 0
     # setting the input mdot variability spectrum:
     if regime == 'flick':
@@ -139,7 +141,7 @@ def singlerun(krepeat):
     mdotar = zeros(nt) ; loutar = zeros(nt) ; mar = zeros(nt) ; orotar = zeros(nt)
     while((t<tmax) & (ctr<nt)):           
         # halfstep:
-        dt = 1./(100.*(mdot/m)+100.*(mdot*j/l)+1./tdepl+1./dtout)
+        dt = .25/(10.*mdot/m + 10.*mdot*j/l + 10./tdepl+1./dtout+1.*alpha)
         if mconst:
             mdotcurrent = mdot
             mdotcurrent1 = mdot
@@ -158,7 +160,7 @@ def singlerun(krepeat):
         if(t>=tstore):
             orot = l / m /r**2/tscale / 2. /pi
             if ifasc:
-                fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m*mscale)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
+                fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
                 fout.flush()
             tstore += dtout
             mdotar[ctr] = mdotcurrent1/ (4.*pi) ; loutar[ctr] = lout/ (4.*pi) ; mar[ctr] = m1 ; orotar[ctr] = orot
@@ -167,6 +169,8 @@ def singlerun(krepeat):
         fout.close()
     if hfile is not None:
         hdf.dump(hfile, krepeat, ["mdot", "L", "M", "omega"], [mdotar, loutar, mar, orotar])
+    if ifplot and regime == 'const':
+        plots.mconsttests(tar, mar*mscale, orotar, meq, oeq)
     return True
 
 def slab_evolution(nrepeat = 1, nproc = None, somega = None):
@@ -174,7 +178,7 @@ def slab_evolution(nrepeat = 1, nproc = None, somega = None):
     global sinefreq
 
     if somega is not None:
-        sinefreq = 2. * pi * somega  * tscale # adjusting the sine frequency                                                   
+        sinefreq = 2. * pi * somega  * tscale # adjusting the sine frequency                                  
 
     hfile = hdf.init(hname, tar * tscale, mdot = mdot, alpha = alpha, tdepl = tdepl,
                      nsims = nrepeat, nflick = nflick, tbreak = tbreak, regime = regime)

@@ -89,6 +89,7 @@ def read(hname, nentry, entry = None):
     print(vals)
     datalist = [] # list of the arrays read from the file
     for theval in vals:
+        #        print(theval)
         datalist.append(data[theval][:])
     if not ifzarr:
         hfile.close()

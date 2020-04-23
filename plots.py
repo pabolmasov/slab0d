@@ -15,22 +15,24 @@ matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"]
 ioff()
 use('Agg')
 
-from mslab import mscale, tscale, omegaNS, r
+from mslab import mscale, tscale, omegaNS, r, pspin
 from mslab import alpha, tdepl
 
 #################################################################################
 # for mslab:
 def mconsttests(tar, mar, orot, meq, oeq):
     # mass and momentum test
+    print("Meq = "+str(meq))
     clf()
     fig, ax = subplots(2,1)
     ax[0].plot(tar, mar*0. + meq*mscale/1e17 , 'r-')
     ax[0].plot(tar, mar/1e17, 'k-')
     #            ax[0].set_xlabel(r'$t$, s', fontsize=18)
     ax[0].set_ylabel(r'$M$, $10^{17}$g', fontsize=18)
-    ax[1].plot(tar, orot*0. + oeq/tscale/2./pi, 'r-')
+    if oeq>0.:
+        ax[1].plot(tar, orot*0. + oeq/tscale/2./pi, 'r-')
     ax[1].plot(tar, orot, 'k-')
-    ax[1].plot(tar, orot*0. + omegaNS/tscale/2./pi, 'b:')
+    ax[1].plot(tar, orot*0. + 1./pspin, 'b:')
     ax[1].plot(tar, orot*0. + r**(-1.5)/tscale/2./pi, 'b:')
     ax[1].set_xlabel(r'$t$, s', fontsize=18)
     ax[1].set_ylabel(r'$f$, Hz', fontsize=18)
@@ -232,6 +234,7 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.eps')
+    savefig(outfile+'.pdf')
     close()
 
 def coherence_doubled(freq1, freq2, cross, dcross1, dcross2, mdot_pds, lBL_pds):
