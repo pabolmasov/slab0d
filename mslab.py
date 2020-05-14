@@ -23,7 +23,7 @@ r = 6./(mNS/1.5) # NS radius in GM/c**2 units
 alpha = 1e-4
 tdepl = 1e4 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
-pspin = 0.003 # spin period, s
+pspin = 0.3 # spin period, s
 tscale = 4.92594e-06 * mNS # time scale, s
 mscale = 6.41417e10 * mNS # mass scale, g
 omegaNS = 2.*pi/pspin *tscale
@@ -38,7 +38,7 @@ nflick = 2.
 tbreak = 1.
 # accretion rate and amplitude:
 mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
-dmdot =  0.5 # relative variation dispersion
+dmdot =  10. # relative variation dispersion
 
 sinefreq = 2.*pi * 10. * tscale # frequency of the sinusoudal variation
 samp = 0.5 # amplitude of the sine
@@ -76,7 +76,7 @@ def onestep(m, l, mdot):
     dm = mdot - m/tdepl
     # alpha * geff * m**2/l * (omega > omegaNS)
     #    a = alpha * m * r / omega * (omega-omegaNS)**2
-    lout = alpha * r * geff * (omega - omegaNS) *m # + 1./tdepl * (omega**2-omegaNS**2) * r**2 /2.) * m 
+    lout = alpha * r * geff * (omega - omegaNS) *m  + 1./tdepl * (omega**2-omegaNS**2) * r**2 /2. * m 
     a = lout / geff
     cth = a/(4.*pi*r**2)
     

@@ -12,7 +12,7 @@ else:
 
 import hdfoutput as hdf
 import plots as plots
-from mslab import r, ifzarr, tscale, ifplot, tdepl, alpha
+from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha
 
 if ifplot:
     import matplotlib
@@ -61,9 +61,14 @@ def logABC(x, frange, rhs):
     
     return acoef * exp( bcoef * x) + ccoef
 
-def viewcurve(infile, nentry, trange = None):
-    t, datalist = hdf.read(infile, nentry)
-    L, M, mdot, omega = datalist
+def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
+    if stored:
+        lines = loadtxt(infile+hdf.entryname(nentry)+'.dat')
+        t = lines[:,0] ; mdot = lines[:,1] ; L   = lines[:,3] ; M = lines[:,2] ; omega = lines[:,4]
+    else:
+        t, datalist = hdf.read(infile, nentry)
+        L, M, mdot, omega = datalist
+        
     if trange is not None:
         w = (t>trange[0]) & (t<trange[1])
         t=t[w] ; L=L[w] ; M=M[w] ; mdot=mdot[w] ; omega=omega[w]
@@ -74,14 +79,15 @@ def viewcurve(infile, nentry, trange = None):
         clf()
         fig, ax = subplots(2,1)
         #   subplot(2,1,0)
-        sc1 = ax[0].scatter(L+Ldisc, omega * r**1.5*tscale, c=t, s=1.)
+        sc1 = ax[0].scatter(L+Ldisc, 2.*pi*omega * r**1.5*tscale, c=t, s=1.)
         cbar1 = colorbar(sc1, ax=ax[0])
         cbar1.ax.tick_params(labelsize=14, length=3, width=1., which='major')
         cbar1.set_label(r'$t$, s', fontsize=18)
         ax[0].set_ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
+        ax[0].set_xscale('log')
         # '$\displaystyle \frac{\Omega}{\Omega_{\rm K}}$', fontsize = 20)
         #    subplot(2,1,1)
-        sc2 = ax[1].scatter(L+Ldisc, oepi, c=t, s=1.)
+        sc2 = ax[1].scatter(L+Ldisc, 2.*pi*oepi, c=t, s=1.)
         cbar2 = colorbar(sc2, ax=ax[1])
         cbar2.ax.tick_params(labelsize=14, length=3, width=1., which='major')
         cbar2.set_label(r'$t$, s', fontsize=18)
@@ -89,11 +95,12 @@ def viewcurve(infile, nentry, trange = None):
         ax[1].set_ylabel(r'$\Omega_{\rm e}/\Omega_{\rm K}$', fontsize = 20)
         # '$\displaystyle 2\frac{\Omega}{\Omega_{\rm K}}\frac{L}{L_{\rm Edd}}$', fontsize = 20)
         #        xlim(mdot.min(), mdot.max()) ;
-        ax[0].set_ylim(omega.min() * r**1.5*tscale, omega.max() * r**1.5*tscale)
+        ax[0].set_ylim(2.*pi*omega.min() * r**1.5*tscale, 2.*pi*omega.max() * r**1.5*tscale)
         ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
         ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
         ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
         ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+        ax[1].set_xscale('log')
         fig.set_size_inches(5, 10)
         fig.tight_layout()
         savefig(infile+"_O.pdf")
@@ -103,7 +110,7 @@ def viewcurve(infile, nentry, trange = None):
         clf()
         fig = figure()
         plot(t[wpos], L[wpos], 'k-')
-        plot(t, Ldisc, 'r:')
+        plot(t, Ldisc * j**2 / r, 'r:')
         xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$L/L_{\rm Edd}$', fontsize = 20)
         ylim(minimum(L,Ldisc)[wpos].min(), maximum(L, Ldisc)[wpos].max())
         yscale('log')
@@ -115,7 +122,17 @@ def viewcurve(infile, nentry, trange = None):
         savefig(infile+"_lBL.png")
         savefig(infile+"_lBL.pdf")
         close("all")
-
+    if ascout:
+        fout = open(infile+hdf.entryname(nentry)+'.dat', 'w')
+        #        fout.write('# parameters:')
+        # fout.write('# mdot = '+str(mdot)+'\n')
+        # fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
+        fout.write('#  t, mdot, M, L, omega')
+        for k in arange(nt):
+            fout.write(str(t[k])+" "+str(mdot[k])+" "+str(M[k])+" "+str(L[k])+" "+str(omega[k])+"\n")
+            fout.flush()
+        fout.close()
+        
 def spec_onevar(varno, infile = 'slabout', trange = [0.0, 1e10], binning = 100, logbinning = False, simfilter = None, cotest = False):
     '''
     makes spectra and cross-spectra for a given parameter of the output

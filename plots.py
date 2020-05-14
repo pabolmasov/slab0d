@@ -187,7 +187,6 @@ def plot_stored(ascfile):
     c = lines[:,8] ; dc = lines[:,9] ; dc1 = lines[:,10]
     p = lines[:,11] ; dp = lines[:,12] ; dp1 = lines[:,13]
     np = lines[:,14]
-    
     coherence(binfreq, c, dc, dc1, p, dp, dp1, np, outfile = ascfile+'_c')
     pds(binfreq, mdot, dmdot, d1mdot, y, dy, d1y, np, outfile = ascfile+'_pds')
 
@@ -211,9 +210,9 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi/2., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi, 'r-')
     ax[0].errorbar(binfreqc[w], phaselag[w], xerr = binfreqs[w],
-                   yerr = dphaselag[w], fmt = 'k.')
+                   yerr = (dphaselag)[w], fmt = 'k.')
     e1 = ax[0].errorbar(binfreqc[w]+binfreqs[w]*0.2, phaselag[w],
-                        yerr = dphaselag1[w], fmt = 'none')
+                        yerr = (dphaselag1)[w], fmt = 'none')
     e1[-1][0].set_linestyle(':')
     ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18) ; ax[0].set_ylim(-pi,pi)
     ax[1].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,1.], 'g')
@@ -222,7 +221,7 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     ax[1].errorbar(binfreqc[w], coherence,
                    xerr = binfreqs[w], yerr = dcoherence[w], fmt = 'k.')
     e1 = ax[1].errorbar(binfreqc[w]+binfreqs[w]*0.2, coherence[w],
-                        yerr = dcoherence1[w], fmt = 'none')
+                        yerr = (dcoherence1)[w], fmt = 'none')
     e1[-1][0].set_linestyle(':')
     ax[1].set_xscale('log') # ;   ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
