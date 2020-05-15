@@ -20,25 +20,26 @@ from multiprocessing import Pool
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-4
-tdepl = 1e4 # depletion time in GM/c^3 units
+alpha = 1e-7
+tdepl = 1e7 # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
-pspin = 0.3 # spin period, s
+pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS # time scale, s
 mscale = 6.41417e10 * mNS # mass scale, g
 omegaNS = 2.*pi/pspin *tscale
+dtdyn = r**1.5
 
 print("q = "+str(r**2/alpha/tdepl/j))
 
 # noise parameters:
 regimes = ['const', 'sine', 'flick', 'brown']
-regime = 'flick'
+regime = 'brown'
 
 nflick = 2.
-tbreak = 1.
+tbreak = tdepl
 # accretion rate and amplitude:
 mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
-dmdot =  10. # relative variation dispersion
+dmdot =  .5 # relative variation dispersion
 
 sinefreq = 2.*pi * 10. * tscale # frequency of the sinusoudal variation
 samp = 0.5 # amplitude of the sine
@@ -46,9 +47,8 @@ samp = 0.5 # amplitude of the sine
 # time grid
 maxtimescale = (tdepl+1./alpha)
 mintimescale = 1./(1./tdepl+alpha)
-dtdyn = r**1.5
-dtout = minimum(0.3*dtdyn,3e-2*mintimescale) # this gives 10^5 data points
-tmax = 30.*maxtimescale
+dtout = 1e-2*mintimescale # this gives 10^5 data points
+tmax = 100.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
 tar = dtout * arange(nt)
@@ -100,21 +100,22 @@ def singlerun(krepeat):
     print("simulation No"+str(krepeat))
     # initial conditions:
     tstore = 0.;
-    m =  0.1*mdot*tdepl # starting mass, 10% from equilibrium
-    l = omegaNS*r**2*m   # starting angular momentum
+    meq = mdot * tdepl
+    q = r**2/alpha/tdepl/j
+    oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
+    m =  meq # starting mass, 100% equilibrium
+    l = oeq*r**2*m   # starting angular momentum, = equilibrium
     t = 0. ; dt = 0.1 ; ctr = 0
+    dt_est = .05/(1./mintimescale+1./dtout)
     # setting the input mdot variability spectrum:
     if regime == 'flick':
-        tint, mint = noize.flickgen(tmax, dtdyn, nslope = nflick, rseed = krepeat)
+        tint, mint = noize.flickgen(tmax, dt_est, nslope = nflick, rseed = krepeat)
         mmean = mint.mean() ; mrms = mint.std()
     if regime == 'brown':
-        tint, mint = noize.brown(tmax, dtdyn, tbreak, rseed = krepeat)  # nslope = nflick)
+        tint, mint = noize.brown(tmax, dt_est, tbreak, rseed = krepeat)  # nslope = nflick)
         mmean = mint.mean() ; mrms = mint.std()
     if regime == 'const':
         mconst = True
-        meq = mdot * tdepl
-        q = r**2/alpha/tdepl/j
-        oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
     if (regime == 'flick') | (regime == 'brown'):
         mint = mdot * exp( (mint-mmean)/mrms * dmdot)
         mconst = False

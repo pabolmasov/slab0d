@@ -94,13 +94,14 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
         ax[1].set_xlabel(r'$L/L_{\rm Edd}$', fontsize = 20)
         ax[1].set_ylabel(r'$\Omega_{\rm e}/\Omega_{\rm K}$', fontsize = 20)
         # '$\displaystyle 2\frac{\Omega}{\Omega_{\rm K}}\frac{L}{L_{\rm Edd}}$', fontsize = 20)
-        #        xlim(mdot.min(), mdot.max()) ;
+        ax[0].set_xlim(mdot.min(), mdot.max()) ;
         ax[0].set_ylim(2.*pi*omega.min() * r**1.5*tscale, 2.*pi*omega.max() * r**1.5*tscale)
         ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
         ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
         ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
         ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
         ax[1].set_xscale('log')
+        ax[1].set_xlim(mdot.min(), mdot.max()) ;
         fig.set_size_inches(5, 10)
         fig.tight_layout()
         savefig(infile+"_O.pdf")
