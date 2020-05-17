@@ -12,7 +12,7 @@ else:
 
 import hdfoutput as hdf
 import plots as plots
-from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha
+from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha, omegaNS
 
 if ifplot:
     import matplotlib
@@ -84,7 +84,7 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
         cbar1.ax.tick_params(labelsize=14, length=3, width=1., which='major')
         cbar1.set_label(r'$t$, s', fontsize=18)
         ax[0].set_ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
-        ax[0].set_xscale('log')
+        #        ax[0].set_xscale('log')
         # '$\displaystyle \frac{\Omega}{\Omega_{\rm K}}$', fontsize = 20)
         #    subplot(2,1,1)
         sc2 = ax[1].scatter(L+Ldisc, 2.*pi*oepi, c=t, s=1.)
@@ -94,14 +94,14 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
         ax[1].set_xlabel(r'$L/L_{\rm Edd}$', fontsize = 20)
         ax[1].set_ylabel(r'$\Omega_{\rm e}/\Omega_{\rm K}$', fontsize = 20)
         # '$\displaystyle 2\frac{\Omega}{\Omega_{\rm K}}\frac{L}{L_{\rm Edd}}$', fontsize = 20)
-        ax[0].set_xlim(mdot.min(), mdot.max()) ;
+        #        ax[0].set_xlim(mdot.min(), mdot.max()) ;
         ax[0].set_ylim(2.*pi*omega.min() * r**1.5*tscale, 2.*pi*omega.max() * r**1.5*tscale)
         ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
         ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
         ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
         ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-        ax[1].set_xscale('log')
-        ax[1].set_xlim(mdot.min(), mdot.max()) ;
+        #        ax[1].set_xscale('log')
+        #        ax[1].set_xlim(mdot.min(), mdot.max()) ;
         fig.set_size_inches(5, 10)
         fig.tight_layout()
         savefig(infile+"_O.pdf")
@@ -114,7 +114,7 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
         plot(t, Ldisc * j**2 / r, 'r:')
         xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$L/L_{\rm Edd}$', fontsize = 20)
         ylim(minimum(L,Ldisc)[wpos].min(), maximum(L, Ldisc)[wpos].max())
-        yscale('log')
+        #        yscale('log')
         fig.set_size_inches(10, 4)
         tick_params(labelsize=14, length=6, width=1., which='major')
         tick_params(labelsize=14, length=3, width=1., which='minor')
@@ -122,6 +122,23 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
         savefig(infile+"_lBL.eps")
         savefig(infile+"_lBL.png")
         savefig(infile+"_lBL.pdf")
+        atd = alpha * M/mdot * r**1.5 
+        print("q = "+str(r**2/alpha/tdepl/j))
+        omegaplus = 1./2./atd + sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
+        omegaminus = 1./2./atd - sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
+        
+        clf()
+        plot(t[wpos], omega[wpos] * r**1.5*tscale, 'k-')
+        plot(t[wpos], omegaplus[wpos], 'b:')
+        #        plot(t[wpos], omegaminus[wpos], 'r--')
+        plot(t, t*0.+omegaNS, 'g-.')
+        xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
+        tick_params(labelsize=14, length=6, width=1., which='major')
+        tick_params(labelsize=14, length=3, width=1., which='minor')
+        savefig(infile+"_Opm.eps")
+        savefig(infile+"_Opm.png")
+        savefig(infile+"_Opm.pdf")
+        
         close("all")
     if ascout:
         fout = open(infile+hdf.entryname(nentry)+'.dat', 'w')

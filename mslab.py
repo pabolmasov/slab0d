@@ -20,20 +20,25 @@ from multiprocessing import Pool
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-7
-tdepl = 1e7 # depletion time in GM/c^3 units
+alpha = 3e-7
+tdepl = 1e6 # r**1.5/alpha/2. # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS # time scale, s
 mscale = 6.41417e10 * mNS # mass scale, g
-omegaNS = 2.*pi/pspin *tscale
+omegaNS = 2.*pi/pspin * tscale
 dtdyn = r**1.5
 
+atd = alpha * tdepl / r**1.5 
 print("q = "+str(r**2/alpha/tdepl/j))
+omegaplus = 1./2./atd + sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
+omegaminus = 1./2./atd - sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
+print("Omega +/- = "+str(omegaplus)+", "+str(omegaminus)+"\Omega_K \n")
+# ii = input("O")
 
 # noise parameters:
 regimes = ['const', 'sine', 'flick', 'brown']
-regime = 'brown'
+regime = 'flick'
 
 nflick = 2.
 tbreak = tdepl
@@ -51,6 +56,8 @@ dtout = 1e-2*mintimescale # this gives 10^5 data points
 tmax = 100.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
+print("alpha = "+str(alpha))
+print("tdepl = "+str(tdepl))
 tar = dtout * arange(nt)
 
 # outputs:
@@ -98,11 +105,13 @@ def singlerun(krepeat):
     runs an iteration with the number krepeat
     '''
     print("simulation No"+str(krepeat))
+    print("alpha * tdepl = "+str(alpha * tdepl))
     # initial conditions:
     tstore = 0.;
     meq = mdot * tdepl
     q = r**2/alpha/tdepl/j
-    oeq = j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2.
+    oeq = maximum(j/r**2 * (q - sqrt(q**2-4.*q+4.*r/j**2))/2., omegaNS)
+    print("oeq = "+str(oeq))
     m =  meq # starting mass, 100% equilibrium
     l = oeq*r**2*m   # starting angular momentum, = equilibrium
     t = 0. ; dt = 0.1 ; ctr = 0
@@ -172,9 +181,12 @@ def singlerun(krepeat):
         hdf.dump(hfile, krepeat, ["mdot", "L", "M", "omega"], [mdotar, loutar, mar, orotar])
     if ifplot and regime == 'const':
         plots.mconsttests(tar, mar*mscale, orotar, meq, oeq)
-    return True
+    return orotar.mean(), orotar.std(), oeq
+
+###############################################################################################################
 
 def slab_evolution(nrepeat = 1, nproc = None, somega = None):
+    # simulates the evolution "nrepeat" times on "nproc" cores
     global hfile 
     global sinefreq
 
@@ -196,3 +208,32 @@ def slab_evolution(nrepeat = 1, nproc = None, somega = None):
         if not ifzarr:
             hfile.close()
 
+def tvar(nrepeat = 10):
+    global tdepl
+    global hfile
+    global hname
+
+    hname = 'tvar'
+
+    td1 = dtdyn / alpha * 0.05
+    td2 = 30. * td1
+    nd = nrepeat
+    tdar = arange(nd) / double(nd) * (td2 - td1) + td1
+
+    omar = zeros(nd) ; ostar = zeros(nd) ; oeq = zeros(nd)
+    
+    hfile = hdf.init(hname, tar * tscale, mdot = mdot, alpha = alpha, tdepl = td1,
+                     nsims = nrepeat, nflick = nflick, tbreak = tbreak, regime = regime)
+    fout = open('tvar.dat', 'w')
+    for k in arange(nd):
+        tdepl = tdar[k]
+        omean, ostd, ooeq = singlerun(k)
+        omar[k] = omean * (2.*pi*tscale) ; ostar[k] = ostd * (2.*pi*tscale) ; oeq[k] = ooeq
+        print(str(alpha*tdepl)+" "+str(omean)+" "+str(ostd)+"\n")
+        fout.write(str(alpha*tdepl/dtdyn)+" "+str(omar[k]*r**1.5)+" "+str(ostar[k]*r**1.5)+" "+str(oeq[k] * r**1.5)+"\n")
+    fout.close()
+    
+    plots.xydy(alpha*tdar/dtdyn, omar*r**1.5, ostar*r**1.5, xlog = True, addlines = [oeq * r**1.5, oeq*0.+omegaNS*r**1.5],
+               xl = r'$\alpha \Omega_{\rm K} t_{\rm depl}$', yl = r'$\Omega/\Omega_{\rm K}$', outfile = 'tvar')
+    
+    

@@ -18,6 +18,44 @@ use('Agg')
 from mslab import mscale, tscale, omegaNS, r, pspin
 from mslab import alpha, tdepl
 
+linestyles = ['-', '--', ':', '-.', '--.']
+
+###########################################################################
+def xydyfile(infile):
+    lines = loadtxt(infile+'.dat')
+    x = lines[:,0] ; y = lines[:,1] ; dy = lines[:,2] ; z = lines[:,3]
+    xydy(x, y, dy, outfile = infile+'_xydy', addlines=[z])
+
+def xydy(x, y, dy, xl = None, yl = None, outfile = 'xydy', xlog = False, ylog = False, addlines = None):
+    '''
+    general plotter for quantity y as a function of x. dy is shown as errorbars for y. 
+    '''
+    clf()
+    fig = figure()
+    if addlines is not None:
+        # addlines should be a list
+        nlines = shape(addlines)[0]
+        for k in arange(nlines):
+            plot(x, addlines[k], 'r', linestyle = linestyles[k])
+    plot(x, y, 'ko')
+    eb = errorbar(x, y, yerr = dy, fmt = 'none')
+    eb[-1][0].set_linestyle('-')
+    if xl is not None:
+        xlabel(xl, fontsize = 18)
+    if yl is not None:
+        ylabel(yl, fontsize = 18)
+    if xlog:
+        xscale('log')
+    if ylog:
+        yscale('log')
+    tick_params(labelsize=14, length=6, width=1., which='major')
+    tick_params(labelsize=14, length=3, width=1., which='minor')
+    fig.set_size_inches(10, 4)
+    fig.tight_layout()
+    savefig(outfile+'.png')
+    savefig(outfile+'.pdf')
+    close()
+        
 #################################################################################
 # for mslab:
 def mconsttests(tar, mar, orot, meq, oeq):
