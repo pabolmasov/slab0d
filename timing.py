@@ -3,6 +3,7 @@ import numpy.fft
 from numpy import *
 from numpy.fft import *
 from scipy.interpolate import interp1d
+from functools import partial
 
 oldscipy = False
 if oldscipy:
@@ -13,6 +14,9 @@ else:
 import hdfoutput as hdf
 import plots as plots
 from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha, omegaNS
+
+import multiprocessing
+from multiprocessing import Pool
 
 if ifplot:
     import matplotlib
@@ -27,6 +31,7 @@ if ifplot:
     matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
     ioff()
     use('Agg')
+    import plots
 
 def Cfun(x, f1, f2, rhs):
     return (f1-x)*log(abs((f2-x)/(f1-x)))+x - rhs
@@ -61,6 +66,53 @@ def logABC(x, frange, rhs):
     
     return acoef * exp( bcoef * x) + ccoef
 
+################################################################
+def readrange(infile, entries):
+    print(entries)
+    t, datalist = hdf.read(infile, entries[0])
+    L, M, mdot, omega = datalist
+
+    x = mdot
+    
+    xsum = copy(x) ; xsumsq = x
+    
+    for k in arange(size(entries)-1)+1:
+        t, datalist = hdf.read(infile, entries[k])
+        L, M, mdot, omega = datalist
+        x = mdot    
+        xsum += x ; xsumsq += x**2
+
+    return t, xsum, xsumsq
+
+def curvestat(infile, nproc = 1, nentries = 1):
+
+    pool = multiprocessing.Pool(processes = nproc)
+
+    nperpro = ((nentries-1) // nproc) + 1 # number of times we require each core (maximal)
+
+    xsumtot = 0. ; xsumsqtot = 0.
+
+    entries_raw = range(nentries) 
+    entries = []
+    
+    for k in arange(nproc):
+        k1 = k*nperpro
+        k2 = minimum(k1+nperpro, nentries)
+        entries.append(entries_raw[k1:k2])
+    print("entries: "+str(entries))
+    print("check n(entries) = "+str(size(asarray(entries).flatten()))+" = "+str(nentries))
+
+    readrange_partial = partial(readrange, infile)
+    res = pool.map(readrange_partial, entries)
+    l = squeeze(asarray(list(res)))
+    t = l[0,0,:] ; xsum = l[:,1,:].sum(axis=0) ; xsumsq = l[:,2,:].sum(axis=0)
+
+    xmean = xsum / double(nentries)
+    xstd = sqrt(xsumsq / double(nentries) - xmean**2)
+
+    plots.xydy(t, xmean, xstd, outfile = 'curvestat')
+    
+        
 def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
     if stored:
         lines = loadtxt(infile+hdf.entryname(nentry)+'.dat')

@@ -20,7 +20,7 @@ from multiprocessing import Pool
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 3e-7
+alpha = 1e-5
 tdepl = 1e6 # r**1.5/alpha/2. # depletion time in GM/c^3 units
 j = 0.9*sqrt(r)
 pspin = 0.003 # spin period, s
@@ -31,6 +31,7 @@ dtdyn = r**1.5
 
 atd = alpha * tdepl / r**1.5 
 print("q = "+str(r**2/alpha/tdepl/j))
+print("atd = "+str(atd))
 omegaplus = 1./2./atd + sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
 omegaminus = 1./2./atd - sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
 print("Omega +/- = "+str(omegaplus)+", "+str(omegaminus)+"\Omega_K \n")
@@ -208,7 +209,11 @@ def slab_evolution(nrepeat = 1, nproc = None, somega = None):
         if not ifzarr:
             hfile.close()
 
+            
 def tvar(nrepeat = 10):
+    '''
+    special regime with variable tdepl
+    '''
     global tdepl
     global hfile
     global hname

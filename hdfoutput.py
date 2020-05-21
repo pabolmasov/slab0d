@@ -75,6 +75,7 @@ def read(hname, nentry, entry = None):
     '''
     read a single entry from an HDF5
     '''
+    print("hname = "+hname)
     if ifzarr:
         hfile = zarr.open(hname+".zarr", "r")
     else:
