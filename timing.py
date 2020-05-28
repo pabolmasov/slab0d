@@ -65,144 +65,7 @@ def logABC(x, frange, rhs):
     print("ccoef = "+str(ccoef))
     
     return acoef * exp( bcoef * x) + ccoef
-
-################################################################
-def readrange(infile, entries):
-    print(entries)
-    t, datalist = hdf.read(infile, entries[0])
-    L, M, mdot, omega = datalist
-
-    x = mdot
-    
-    xsum = copy(x) ; xsumsq = x
-    
-    for k in arange(size(entries)-1)+1:
-        t, datalist = hdf.read(infile, entries[k])
-        L, M, mdot, omega = datalist
-        x = mdot    
-        xsum += x ; xsumsq += x**2
-
-    return t, xsum, xsumsq
-
-def curvestat(infile, nproc = 1, nentries = 1):
-
-    pool = multiprocessing.Pool(processes = nproc)
-
-    nperpro = ((nentries-1) // nproc) + 1 # number of times we require each core (maximal)
-
-    xsumtot = 0. ; xsumsqtot = 0.
-
-    entries_raw = range(nentries) 
-    entries = []
-    
-    for k in arange(nproc):
-        k1 = k*nperpro
-        k2 = minimum(k1+nperpro, nentries)
-        entries.append(entries_raw[k1:k2])
-    print("entries: "+str(entries))
-    print("check n(entries) = "+str(size(asarray(entries).flatten()))+" = "+str(nentries))
-
-    readrange_partial = partial(readrange, infile)
-    res = pool.map(readrange_partial, entries)
-    l = squeeze(asarray(list(res)))
-    t = l[0,0,:] ; xsum = l[:,1,:].sum(axis=0) ; xsumsq = l[:,2,:].sum(axis=0)
-
-    xmean = xsum / double(nentries)
-    xstd = sqrt(xsumsq / double(nentries) - xmean**2)
-
-    plots.xydy(t, xmean, xstd, outfile = 'curvestat')
-    
-        
-def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
-    if stored:
-        lines = loadtxt(infile+hdf.entryname(nentry)+'.dat')
-        t = lines[:,0] ; mdot = lines[:,1] ; L   = lines[:,3] ; M = lines[:,2] ; omega = lines[:,4]
-    else:
-        t, datalist = hdf.read(infile, nentry)
-        L, M, mdot, omega = datalist
-        
-    if trange is not None:
-        w = (t>trange[0]) & (t<trange[1])
-        t=t[w] ; L=L[w] ; M=M[w] ; mdot=mdot[w] ; omega=omega[w]
-    niter = shape(mdot)[0] ; nt = size(t)
-    if ifplot:
-        Ldisc = mdot/r/2.
-        oepi = 2.*omega * r**1.5*tscale * L # epicyclic frequency
-        clf()
-        fig, ax = subplots(2,1)
-        #   subplot(2,1,0)
-        sc1 = ax[0].scatter(L+Ldisc, 2.*pi*omega * r**1.5*tscale, c=t, s=1.)
-        cbar1 = colorbar(sc1, ax=ax[0])
-        cbar1.ax.tick_params(labelsize=14, length=3, width=1., which='major')
-        cbar1.set_label(r'$t$, s', fontsize=18)
-        ax[0].set_ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
-        #        ax[0].set_xscale('log')
-        # '$\displaystyle \frac{\Omega}{\Omega_{\rm K}}$', fontsize = 20)
-        #    subplot(2,1,1)
-        sc2 = ax[1].scatter(L+Ldisc, 2.*pi*oepi, c=t, s=1.)
-        cbar2 = colorbar(sc2, ax=ax[1])
-        cbar2.ax.tick_params(labelsize=14, length=3, width=1., which='major')
-        cbar2.set_label(r'$t$, s', fontsize=18)
-        ax[1].set_xlabel(r'$L/L_{\rm Edd}$', fontsize = 20)
-        ax[1].set_ylabel(r'$\Omega_{\rm e}/\Omega_{\rm K}$', fontsize = 20)
-        # '$\displaystyle 2\frac{\Omega}{\Omega_{\rm K}}\frac{L}{L_{\rm Edd}}$', fontsize = 20)
-        #        ax[0].set_xlim(mdot.min(), mdot.max()) ;
-        ax[0].set_ylim(2.*pi*omega.min() * r**1.5*tscale, 2.*pi*omega.max() * r**1.5*tscale)
-        ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-        ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
-        ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-        ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-        #        ax[1].set_xscale('log')
-        #        ax[1].set_xlim(mdot.min(), mdot.max()) ;
-        fig.set_size_inches(5, 10)
-        fig.tight_layout()
-        savefig(infile+"_O.pdf")
-        savefig(infile+"_O.png")
-
-        wpos = (L > 0.)
-        clf()
-        fig = figure()
-        plot(t[wpos], L[wpos], 'k-')
-        plot(t, Ldisc * j**2 / r, 'r:')
-        xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$L/L_{\rm Edd}$', fontsize = 20)
-        ylim(minimum(L,Ldisc)[wpos].min(), maximum(L, Ldisc)[wpos].max())
-        #        yscale('log')
-        fig.set_size_inches(10, 4)
-        tick_params(labelsize=14, length=6, width=1., which='major')
-        tick_params(labelsize=14, length=3, width=1., which='minor')
-        fig.tight_layout()
-        savefig(infile+"_lBL.eps")
-        savefig(infile+"_lBL.png")
-        savefig(infile+"_lBL.pdf")
-        atd = alpha * M/mdot * r**1.5 
-        print("q = "+str(r**2/alpha/tdepl/j))
-        omegaplus = 1./2./atd + sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
-        omegaminus = 1./2./atd - sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
-        
-        clf()
-        plot(t[wpos], omega[wpos] * r**1.5*tscale, 'k-')
-        plot(t[wpos], omegaplus[wpos], 'b:')
-        #        plot(t[wpos], omegaminus[wpos], 'r--')
-        plot(t, t*0.+omegaNS, 'g-.')
-        xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
-        tick_params(labelsize=14, length=6, width=1., which='major')
-        tick_params(labelsize=14, length=3, width=1., which='minor')
-        savefig(infile+"_Opm.eps")
-        savefig(infile+"_Opm.png")
-        savefig(infile+"_Opm.pdf")
-        
-        close("all")
-    if ascout:
-        fout = open(infile+hdf.entryname(nentry)+'.dat', 'w')
-        #        fout.write('# parameters:')
-        # fout.write('# mdot = '+str(mdot)+'\n')
-        # fout.write('# std(log(mdot)) = '+str(dmdot)+'\n')
-        fout.write('#  t, mdot, M, L, omega')
-        for k in arange(nt):
-            fout.write(str(t[k])+" "+str(mdot[k])+" "+str(M[k])+" "+str(L[k])+" "+str(omega[k])+"\n")
-            fout.flush()
-        fout.close()
-        
+     
 def spec_onevar(varno, infile = 'slabout', trange = [0.0, 1e10], binning = 100, logbinning = False, simfilter = None, cotest = False):
     '''
     makes spectra and cross-spectra for a given parameter of the output
@@ -281,7 +144,216 @@ def spec_onevar(varno, infile = 'slabout', trange = [0.0, 1e10], binning = 100, 
         savefig('coherence.png')
         savefig('coherence.eps')
         close('all')    
+
+# Fourier namespace (does not deserve the name "class")
+class fourier:
+    def define(self, nt, dt):
+        self.freq = rfftfreq(nt, d=dt)
+        self.nf = size(self.freq)
+    def FT(self, lc):
+        self.mean = lc.mean()
+        self.tilde = 2.*rfft(lc-self.mean)/lc.sum() # Miyamoto norm
+        self.pds = abs(self.tilde)**2
+    def crossT(self, lcref_fft):
+        self.cross = self.tilde * conj(lcref_fft)
+
+class binobject:
+    def interpolmake(self, f1, f2, iniar, diniar):
+        # makes a binned array out of initial "iniar". Calculates two sets of uncertainties, one
+        # averages diniar (ensemble errors) and one intra-bin
+        nf1 = size(f1) ; nf2 = size(f2)-1
+        ifcomplex = iscomplex(iniar[0])
+        self.av = zeros(nf2, dtype = type(iniar)) # type could be double or complex
+        self.densemble = zeros(nf2, dtype = type(iniar)) # type could be double or complex
+        self.dbin = zeros(nf2, dtype = type(iniar)) # type could be double or complex
+        self.npoints = zeros(nf2, dtype = integer)
+        for k in arange(nf2):
+            w = (f1 > f2[k]) & (f1 < f2[k+1])
+            self.npoints[k] = w.sum()
+            self.av[k] = iniar[w].mean()
+            self.densemble[k] = diniar[w].mean() # mean ensemble error
+            if ifcomplex:
+                self.dbin[k] = iniar[w].real.std() + iniar[w].imag.std() * 1j
+            else:
+                self.dbin[k] = iniar[w].std()
+    def comake(self, pds1, pds2):
+        # makes coherence and phase lags out of a cross-spectrum
+        self.c = abs(self.av) / numpy.sqrt(pds1.av * pds2.av)
+        self.dc_ensemble = (self.densemble.real * self.av.real + self.densemble.imag * self.av.imag) / sqrt(pds1.av*pds2.av) + abs(self.av) / 2. * (pds1.densemble / pds1.av + pds2.ensemble / pds2.av)
+        self.dc_bin = (self.dbin.real * self.av.real + self.dbin.imag * self.av.imag) / sqrt(pds1.av*pds2.av) + abs(self.av) / 2. * (pds1.dbin / pds1.av + pds2.dbin / pds2.av)
+        self.phlag = angle(self.av)
+        self.dphlag_ensemble = sqrt((self.densemble.real/self.av.real)**2 +
+                                   (self.densemble.imag/self.av.imag)**2)/(1.+tan(self.phlag)**2)
+        self.dphlag_bin = sqrt((self.dbin.real/self.av.real)**2 +
+                                   (self.dbin.imag/self.av.imag)**2)/(1.+tan(self.phlag)**2)
+
+def asc_pdsout(freq, pdsobjects, outfile):
+    '''
+outputs 
+    '''
+    fout = open(outfile+'.dat', 'w')
+    nf = size(freq)-1 ; nobjects = size(pdsobjects)
+    fout.write('#  f1 f2 pds1 d1pds1 d2pds1 pds2 d1pds2 d2pds2 ... ')
+    for k in arange(nf):
+        s = str(freq[k])+' '+str(freq[k+1])
+        for ko in arange(nobjects):
+            s+=' '+str(pdsobjects[ko].av[k])+' '+str(pdsobjects[ko].densemble[k])+' '+str(pdsobjects[ko].dbin[k])
+        s+='\n'
+        print(s)
+        fout.write(s)
+    fout.close()
+
+def asc_coherence(freq, cobjects, outfile):
+    fout = open(outfile+'.dat', 'w')
+    nf = size(freq)-1 ; nobjects = size(cobjects)
+    fout.write('#  f1 f2 co1 d1co1 d2co1 phlag1 d1phlag1 d2phlag1 co2 ... ')
+    for k in arange(nf):
+        s = str(freq[k])+' '+str(freq[k+1])
+        for ko in arange(nobjects):
+            s+=' '+str(cobjects[ko].co[k])+' '+str(cobjects[ko].dc_ensemble[k])+' '+str(cobjects[ko].dc_bin[k])
+            s+=' '+str(cobjects[ko].phlag[k])+' '+str(cobjects[ko].dphlag_ensemble[k])+' '+str(cobjects[ko].dphlag_bin[k])
+        s+='\n'
+        print(s)
+        fout.write(s)
+    fout.close()
         
+def pdsmerge(fourierlist):
+    '''
+    makes a mean and std arrays for PDS out of a list of "Fourier" objects
+    '''
+    nl = size(fourierlist)
+    nf = size(fourierlist[0].pds)
+    pdssum = zeros(nf, dtype = double) ; pdssqsum = zeros(nf, dtype = double)
+    
+    for k in arange(nl):
+        pdssum += fourierlist[k].pds
+        pdssqsum += fourierlist[k].pds**2
+    pdsmean = pdssum/double(nl)
+    pdsstd = sqrt(pdssqsum/double(nl) - pdsmean**2)
+    return pdsmean, pdsstd
+
+def crossmerge(fourierlist):
+    '''
+    calculates the mean cross-spectrum (complex) and its uncertainties (stored as a complex value)
+    '''
+    nl = size(fourierlist)
+    nf = size(fourierlist[0].pds)
+    crosssum = zeros(nf, dtype = complex) ; crosssqsum = zeros(nf, dtype = complex)
+    for k in arange(nl):
+        crosssum += fourierlist[k].cross
+        crosssqsum += fourierlist[k].cross.real**2 + fourierlist[k].cross.imag**2 * 1j
+    crossmean = crosssum / double(nl)
+    crossstd = sqrt(crosssqsum.real/ double(nl) - crossmean.real**2) + \
+               sqrt(crosssqsum.imag/ double(nl) - crossmean.imag**2) * 1j
+    return crossmean, crossstd
+    
+def spec_retrieve(infile, entries):
+    '''
+    reads several entries from the zarr file, converts them to PDS and calculates mean and dispersions of the PDS, co-spectra and their uncertainties
+    infile is a string without extension (should be ".zarr")
+    entries is a list or array of numbers
+    trange may be of the shape [t1, t2] and sets the time limits for the series
+    '''
+    mdotsps = [] ; msps = [] ; lsps = [] ; osps = []
+    mdotsp = fourier() ; msp = fourier() ; lsp = fourier() ; osp = fourier()
+    for k in arange(size(entries)):
+        t, datalist = hdf.read(infile, 0, entry = entries[k])
+        if k == 0:
+                nt = size(t) ; dt = (t.max()-t.min())/double(nt)
+        mdotsp.define(nt, dt)
+        msp.define(nt, dt)    ;    lsp.define(nt, dt)   ;  osp.define(nt, dt) 
+        L, M, mdot, omega = datalist
+        mdotsp.FT(mdot)
+        mdotsps.append(mdotsp)
+        msp.FT(M)
+        msp.crossT(mdotsp.tilde)
+        msps.append(msp)
+        lsp.FT(L) ; lsp.crossT(mdotsp.tilde)
+        lsps.append(lsp)
+        osp.FT(omega) ; osp.crossT(mdotsp.tilde)
+        osps.append(osp)
+    return mdotsps, msps, osps, lsps
+
+def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100):
+    '''
+    reads from a zarr file light curves in parallel, calculates and merges PDS and cross-spectra
+    '''
+    keys = hdf.keyshow(infile)
+    nsims = size(keys)-1 # one key points to globals
+    if simlimit is not None:
+        nsims = minimum(nsims, simlimit)
+    entrieslist = keys[:nsims]        
+    print(entrieslist)
+    nperproc = nsims//nproc
+    # entries chunked to fit the number of cores
+    entrieslist = [entrieslist[i:(i+nperproc)] for i in range(0,nsims,nperproc)]
+    #    print(entrieslist)
+    #    ii = input('L')
+    t1 = time.time()
+    pool = multiprocessing.Pool(processes = nproc)
+    spec_retrieve_partial = partial(spec_retrieve, infile)
+    res = pool.map(spec_retrieve_partial, entrieslist)
+    t2 = time.time()
+    # first dimension: processor
+    # second dimension: variable
+    l = squeeze(asarray(list(res)))
+    print(shape(l))
+    #    freq = l[0,0].freq
+    mdotsps = l[:,0,:].flatten() ; msps = l[:,1,:].flatten() ; osps = l[:,2,:].flatten()
+    lsps = l[:,3,:].flatten()
+    print(shape(mdotsps))
+    freq = mdotsps[0].freq
+    mdot_pds, dmdot_pds = pdsmerge(mdotsps)
+    m_pds, dm_pds = pdsmerge(msps)
+    o_pds, do_pds = pdsmerge(osps)
+    l_pds, dl_pds = pdsmerge(lsps)
+    m_c, dm_c = crossmerge(msps)
+    o_c, do_c = crossmerge(osps)
+    l_c, dl_c = crossmerge(lsps)
+    t3 = time.time()
+    print("parallel reading took "+str(t2-t1)+"s")
+    print("merging took "+str(t3-t2)+"s")
+    
+    clf()
+    errorbar(freq, mdot_pds, yerr = dmdot_pds)
+    errorbar(freq, m_pds, yerr = dm_pds)
+    xscale('log') ; yscale('log') ; xlim(freq[freq>0.].min(), freq.max())
+    savefig('pdstest.png')
+    t4 = time.time()
+    
+    # binning:
+    nbins = binning
+    npoints = zeros(nbins, dtype = integer)
+    mdot_pds_bin = binobject()  ; m_pds_bin = binobject() ; l_pds_bin = binobject()  ;  o_pds_bin = binobject()
+    mdot_cross_bin = binobject()  ; m_cross_bin = binobject() ; l_cross_bin = binobject()  ;  o_cross_bin = binobject()
+    freq1 = freq[freq>0.].min() ; freq2 = freq.max()
+    freqbin = (freq2/freq1)**(arange(nbins+1)/double(nbins))*freq1
+    freqbin[0] = 0.
+    mdot_pds_bin.interpolmake(freq, freqbin, mdot_pds, dmdot_pds)
+    m_pds_bin.interpolmake(freq, freqbin, m_pds, dm_pds)
+    l_pds_bin.interpolmake(freq, freqbin, l_pds, dl_pds)
+    o_pds_bin.interpolmake(freq, freqbin, o_pds, do_pds)
+    print(m_pds_bin.av)
+    m_cross_bin.interpolmake(freq, freqbin, m_c, dm_c)
+    l_cross_bin.interpolmake(freq, freqbin, l_c, dl_c)
+    o_cross_bin.interpolmake(freq, freqbin, o_c, do_c)
+    m_cross_bin.comake(mdot_pds_bin, m_pds_bin) # calculate coherence and phase lags
+    l_cross_bin.comake(mdot_pds_bin, l_pds_bin)
+    o_cross_bin.comake(mdot_pds_bin, o_pds_bin)
+    t5 = time.time()
+    asc_pdsout(binfreq, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
+    asc_coherence(binfreq, [m_cross_bin, l_cross_bin, o_cross_bin], infile+'_cross')
+    plots.object_pds(binfreq, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
+    plots.object_coherence(binfreq, m_cross_bin, infile+'_mcoherence')
+    plots.object_coherence(binfreq, l_cross_bin, infile+'_lcoherence')
+    plots.object_coherence(binfreq, o_cross_bin, infile+'_ocoherence')
+    t6 = time.time()
+    print("binning "+str(t5-t4)+"s")
+    print("outputs "+str(t6-t5)+"s")    
+    
+    
+################################################################################################
+
 def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                     binning = 100, logbinning = False, simfilter = None, cotest = False):
     '''

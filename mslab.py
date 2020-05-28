@@ -184,7 +184,7 @@ def singlerun(krepeat):
         plots.mconsttests(tar, mar*mscale, orotar, meq, oeq)
     return orotar.mean(), orotar.std(), oeq
 
-###############################################################################################################
+##############################################################################
 
 def slab_evolution(nrepeat = 1, nproc = None, somega = None):
     # simulates the evolution "nrepeat" times on "nproc" cores
@@ -208,7 +208,6 @@ def slab_evolution(nrepeat = 1, nproc = None, somega = None):
         map(singlerun, krepeat)
         if not ifzarr:
             hfile.close()
-
             
 def tvar(nrepeat = 10):
     '''

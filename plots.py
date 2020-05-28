@@ -20,6 +20,8 @@ from mslab import alpha, tdepl
 
 linestyles = ['-', '--', ':', '-.', '--.']
 
+colorsequence = ['k', 'r', 'g', 'b', 'm']
+
 ###########################################################################
 def xydyfile(infile):
     lines = loadtxt(infile+'.dat')
@@ -352,3 +354,69 @@ def biplot(f, bc, bphi, outname = 'biplot'):
     fig.tight_layout()
     savefig(outname+'.png')
     close()
+
+####################################################3
+# plotting from binobject
+from timing import binobject
+
+def object_pds(freq, objlist, outfile):
+    nf = size(freq)-1 ;  no = size(objlist)
+    freqc = (freq[1:]+freq[:-1])/2.
+    freqs = (freq[1:]-freq[:-1])/2.
+
+    ebs = zeros(no, dtype = matplotlib.container.ErrorbarContainer)
+    
+    w = (objlist[0].npoints > 0)
+    clf()
+    fig=figure()
+    # plot(freq, mdot_pds, 'k,')
+    # plot(freq, lBL_pds, 'r,')
+    for ko in arange(no):
+        ebs[ko] = errorbar(freqc[w]+freqs[1]*0.2, (freqc*objlist[ko].av)[w], yerr = (freqc*objlist[ko].dbin)[w], fmt = 'none', color=colorsequence[ko])
+        ebs[ko][-1][0].set_linestyle(':')
+        errorbar(freqc[w], (freqc*objlist[ko].av)[w], xerr = freqs[w], yerr = (freqc*objlist[ko].densemble)[w], fmt = colorsequence[ko]+'s')
+    xlim([freqc.min()/2., freq.max()])
+    xscale('log') ; yscale('log')
+    xlabel(r'$f$, Hz') ; ylabel(r'$f \, PDS$')
+    tick_params(labelsize=14, length=6, width=1., which='major')
+    tick_params(labelsize=14, length=4, width=1., which='minor')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
+    savefig(outfile + '.png')
+    savefig(outfile + '.pdf')
+    close()
+    
+def object_coherence(freq, objlist, outfile):
+    nf = size(freq)-1 ;  no = size(objlist)
+    freqc = (freq[1:]+freq[:-1])/2.
+    freqs = (freq[1:]-freq[:-1])/2.
+
+    ebs_c = zeros(no, dtype = matplotlib.container.ErrorbarContainer)
+    ebs_p = zeros(no, dtype = matplotlib.container.ErrorbarContainer)
+    
+    w = (objlist[0].npoints > 0)
+    clf()
+    fig, ax = subplots(2,1)
+    # plot(freq, mdot_pds, 'k,')
+    # plot(freq, lBL_pds, 'r,')
+    for ko in arange(no):
+        ebs_c[ko] = ax[0].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].c[w], yerr = (freqc*objlist[ko].dc_bin)[w], fmt = 'none', color=colorsequence[ko])
+        ebs_c[ko][-1][0].set_linestyle(':')
+        ax[0].errorbar(freqc[w], objlist.c[ko][w], xerr = freqs[w], yerr = objlist[ko].dc_ensemble[w], fmt = colorsequence[ko]+'s')
+        ebs_p[ko] = ax[1].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].phlag[w], yerr = objlist[ko].dphlag_bin[w], fmt = 'none', color=colorsequence[ko])
+        ebs_p[ko][-1][0].set_linestyle(':')
+        ax[1].errorbar(freqc[w], objlist.phlag[ko][w], xerr = freqs[w], yerr = objlist[ko].dphlag_ensemble[w], fmt = colorsequence[ko]+'s')
+    xlim([freqc.min()/2., freq.max()])
+    ax[1].set_xscale('log') # ;   ax[1].set_yscale('log')
+    ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
+    savefig(outfile+'.png')
+    savefig(outfile+'.eps')
+    savefig(outfile+'.pdf')
+    close()
+    
