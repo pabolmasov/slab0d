@@ -21,8 +21,8 @@ from multiprocessing import Pool
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
 alpha = 1e-5
-tdepl = 1e6 # r**1.5/alpha/2. # depletion time in GM/c^3 units
-j = 0.9*sqrt(r)
+tdepl = 6e5 # r**1.5/alpha/2. # depletion time in GM/c^3 units
+j = .9999*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS # time scale, s
 mscale = 6.41417e10 * mNS # mass scale, g
@@ -84,7 +84,7 @@ def onestep(m, l, mdot):
     dm = mdot - m/tdepl
     # alpha * geff * m**2/l * (omega > omegaNS)
     #    a = alpha * m * r / omega * (omega-omegaNS)**2
-    lout = alpha * r * geff * (omega - omegaNS) *m  + 1./tdepl * (omega**2-omegaNS**2) * r**2 /2. * m 
+    lout = alpha * r * geff * (omega - omegaNS) *m  + 1./tdepl * (omega**2-omegaNS**2) * r**2 /2. * m + mdot * ((j/r)**2 - (omega*r)**2 ) / 2.
     a = lout / geff
     cth = a/(4.*pi*r**2)
     
@@ -219,8 +219,8 @@ def tvar(nrepeat = 10):
 
     hname = 'tvar'
 
-    td1 = dtdyn / alpha * 0.05
-    td2 = 30. * td1
+    td1 = dtdyn / alpha * 0.4
+    td2 = 2.5 * td1
     nd = nrepeat
     tdar = arange(nd) / double(nd) * (td2 - td1) + td1
 
@@ -237,7 +237,7 @@ def tvar(nrepeat = 10):
         fout.write(str(alpha*tdepl/dtdyn)+" "+str(omar[k]*r**1.5)+" "+str(ostar[k]*r**1.5)+" "+str(oeq[k] * r**1.5)+"\n")
     fout.close()
     
-    plots.xydy(alpha*tdar/dtdyn, omar*r**1.5, ostar*r**1.5, xlog = True, addlines = [oeq * r**1.5, oeq*0.+omegaNS*r**1.5],
+    plots.xydy(alpha*tdar/dtdyn, omar*r**1.5, ostar*r**1.5, xlog = (td2/td1) > 5., addlines = [oeq * r**1.5, oeq*0.+omegaNS*r**1.5],
                xl = r'$\alpha \Omega_{\rm K} t_{\rm depl}$', yl = r'$\Omega/\Omega_{\rm K}$', outfile = 'tvar')
     
     
