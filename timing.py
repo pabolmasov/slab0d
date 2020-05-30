@@ -145,6 +145,7 @@ def spec_onevar(varno, infile = 'slabout', trange = [0.0, 1e10], binning = 100, 
         savefig('coherence.eps')
         close('all')    
 
+############################################################################   
 # Fourier namespace (does not deserve the name "class")
 class fourier:
     def define(self, nt, dt):
@@ -153,19 +154,22 @@ class fourier:
     def FT(self, lc):
         self.mean = lc.mean()
         self.tilde = 2.*rfft(lc-self.mean)/lc.sum() # Miyamoto norm
-        self.pds = abs(self.tilde)**2
+        self.pds = double(abs(self.tilde)**2)
     def crossT(self, lcref_fft):
-        self.cross = self.tilde * conj(lcref_fft)
+        self.cross = conj(self.tilde) * lcref_fft
 
 class binobject:
+    def __init__(self):
+        print('binobject')
+        
     def interpolmake(self, f1, f2, iniar, diniar):
         # makes a binned array out of initial "iniar". Calculates two sets of uncertainties, one
         # averages diniar (ensemble errors) and one intra-bin
         nf1 = size(f1) ; nf2 = size(f2)-1
         ifcomplex = iscomplex(iniar[0])
-        self.av = zeros(nf2, dtype = type(iniar)) # type could be double or complex
-        self.densemble = zeros(nf2, dtype = type(iniar)) # type could be double or complex
-        self.dbin = zeros(nf2, dtype = type(iniar)) # type could be double or complex
+        self.av = zeros(nf2, dtype = type(iniar[0])) # type could be double or complex
+        self.densemble = zeros(nf2, dtype = type(iniar[0])) # type could be double or complex
+        self.dbin = zeros(nf2, dtype = type(iniar[0])) # type could be double or complex
         self.npoints = zeros(nf2, dtype = integer)
         for k in arange(nf2):
             w = (f1 > f2[k]) & (f1 < f2[k+1])
@@ -176,10 +180,12 @@ class binobject:
                 self.dbin[k] = iniar[w].real.std() + iniar[w].imag.std() * 1j
             else:
                 self.dbin[k] = iniar[w].std()
+                
     def comake(self, pds1, pds2):
         # makes coherence and phase lags out of a cross-spectrum
-        self.c = abs(self.av) / numpy.sqrt(pds1.av * pds2.av)
-        self.dc_ensemble = (self.densemble.real * self.av.real + self.densemble.imag * self.av.imag) / sqrt(pds1.av*pds2.av) + abs(self.av) / 2. * (pds1.densemble / pds1.av + pds2.ensemble / pds2.av)
+        #        print(sqrt(double(pds1.av)))
+        self.c = abs(self.av) / sqrt(pds1.av * pds2.av)
+        self.dc_ensemble = (self.densemble.real * self.av.real + self.densemble.imag * self.av.imag) / sqrt(pds1.av*pds2.av) + abs(self.av) / 2. * (pds1.densemble / pds1.av + pds2.densemble / pds2.av)
         self.dc_bin = (self.dbin.real * self.av.real + self.dbin.imag * self.av.imag) / sqrt(pds1.av*pds2.av) + abs(self.av) / 2. * (pds1.dbin / pds1.av + pds2.dbin / pds2.av)
         self.phlag = angle(self.av)
         self.dphlag_ensemble = sqrt((self.densemble.real/self.av.real)**2 +
@@ -189,16 +195,16 @@ class binobject:
 
 def asc_pdsout(freq, pdsobjects, outfile):
     '''
-outputs 
+    outputs 
     '''
     fout = open(outfile+'.dat', 'w')
     nf = size(freq)-1 ; nobjects = size(pdsobjects)
-    fout.write('#  f1 f2 pds1 d1pds1 d2pds1 pds2 d1pds2 d2pds2 ... ')
+    fout.write('#  f1 f2 pds1 d1pds1 d2pds1 pds2 d1pds2 d2pds2 ... npoints \n')
     for k in arange(nf):
         s = str(freq[k])+' '+str(freq[k+1])
         for ko in arange(nobjects):
             s+=' '+str(pdsobjects[ko].av[k])+' '+str(pdsobjects[ko].densemble[k])+' '+str(pdsobjects[ko].dbin[k])
-        s+='\n'
+        s+=' '+str(pdsobjects[0].npoints[k])+'\n'
         print(s)
         fout.write(s)
     fout.close()
@@ -210,9 +216,9 @@ def asc_coherence(freq, cobjects, outfile):
     for k in arange(nf):
         s = str(freq[k])+' '+str(freq[k+1])
         for ko in arange(nobjects):
-            s+=' '+str(cobjects[ko].co[k])+' '+str(cobjects[ko].dc_ensemble[k])+' '+str(cobjects[ko].dc_bin[k])
+            s+=' '+str(cobjects[ko].c[k])+' '+str(cobjects[ko].dc_ensemble[k])+' '+str(cobjects[ko].dc_bin[k])
             s+=' '+str(cobjects[ko].phlag[k])+' '+str(cobjects[ko].dphlag_ensemble[k])+' '+str(cobjects[ko].dphlag_bin[k])
-        s+='\n'
+        s+=' '+str(cobjects[0].npoints[k])+'\n'
         print(s)
         fout.write(s)
     fout.close()
@@ -303,6 +309,7 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     lsps = l[:,3,:].flatten()
     print(shape(mdotsps))
     freq = mdotsps[0].freq
+    nf = size(freq)
     mdot_pds, dmdot_pds = pdsmerge(mdotsps)
     m_pds, dm_pds = pdsmerge(msps)
     o_pds, do_pds = pdsmerge(osps)
@@ -327,7 +334,10 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     mdot_pds_bin = binobject()  ; m_pds_bin = binobject() ; l_pds_bin = binobject()  ;  o_pds_bin = binobject()
     mdot_cross_bin = binobject()  ; m_cross_bin = binobject() ; l_cross_bin = binobject()  ;  o_cross_bin = binobject()
     freq1 = freq[freq>0.].min() ; freq2 = freq.max()
-    freqbin = (freq2/freq1)**(arange(nbins+1)/double(nbins))*freq1
+    #  freqbin = (freq2/freq1)**(arange(nbins+1)/double(nbins))*freq1
+    kfactor = 5
+    x = arange(nbins+1)/double(nbins)
+    freqbin = logABC(x, [freq1, freq2], kfactor * double(nbins)/ double(nf))
     freqbin[0] = 0.
     mdot_pds_bin.interpolmake(freq, freqbin, mdot_pds, dmdot_pds)
     m_pds_bin.interpolmake(freq, freqbin, m_pds, dm_pds)
@@ -341,18 +351,44 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     l_cross_bin.comake(mdot_pds_bin, l_pds_bin)
     o_cross_bin.comake(mdot_pds_bin, o_pds_bin)
     t5 = time.time()
-    asc_pdsout(binfreq, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
-    asc_coherence(binfreq, [m_cross_bin, l_cross_bin, o_cross_bin], infile+'_cross')
-    plots.object_pds(binfreq, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
-    plots.object_coherence(binfreq, m_cross_bin, infile+'_mcoherence')
-    plots.object_coherence(binfreq, l_cross_bin, infile+'_lcoherence')
-    plots.object_coherence(binfreq, o_cross_bin, infile+'_ocoherence')
+    asc_pdsout(freqbin, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
+    asc_coherence(freqbin, [m_cross_bin, l_cross_bin, o_cross_bin], infile+'_cross')
+    plots.object_pds(freqbin, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
+    plots.object_coherence(freqbin, [m_cross_bin], infile+'_mcoherence')
+    plots.object_coherence(freqbin, [l_cross_bin], infile+'_lcoherence')
+    plots.object_coherence(freqbin, [o_cross_bin], infile+'_ocoherence')
     t6 = time.time()
     print("binning "+str(t5-t4)+"s")
     print("outputs "+str(t6-t5)+"s")    
+
+def object_pds_stored(infile, nvar = 0):
+    lines = np.loadtxt(infile+".dat")
+    f1 = lines[:,0] ; f2 = lines[:,1] ; npoints=lines[:, -1]
+    nf = size(f1)
+    freq = zeros(nf+1)
+    freq[:-1] = f1[:] ; freq[-1] = f2[-1]
+    q = lines[:, nvar*3+2] ; dq_ensemble = lines[:, nvar*3+3] ; dq_bin = lines[:, nvar*3+4]
+    qobj = binobject()
+    qobj.av = q ; qobj.densemble = dq_ensemble ; qobj.dbin = dq_bin ; qobj.npoints = npoints
+    plots.object_coherence(freq, [qobj], infile)
+   
+def object_coherence_stored(infile, nvar = 0):
+    lines = np.loadtxt(infile+".dat")
+    f1 = lines[:,0] ; f2 = lines[:,1] ; npoints=lines[:, -1]
+    nf = size(f1)
+    freq = zeros(nf+1)
+    freq[:-1] = f1[:] ; freq[-1] = f2[-1]
+    c = lines[:, nvar*6+2] ; dc_ensemble = lines[:, nvar*6+3] ; dc_bin = lines[:, nvar*3+4]
+    phlag  = lines[:, nvar*6+5] ; dphlag_ensemble = lines[:, nvar*6+6] ; dphlag_bin = lines[:, nvar*6+7]
+    qobj = binobject()
+    qobj.c = c ; qobj.dc_ensemble = dc_ensemble ; qobj.dc_bin = dc_bin ; qobj.npoints = npoints
+    qobj.phlag = phlag ; qobj.dphlag_ensemble = dphlag_ensemble ; qobj.dphlag_bin = dphlag_bin
+    plots.object_coherence(freq, [qobj], infile)
     
     
 ################################################################################################
+
+
 
 def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
                     binning = 100, logbinning = False, simfilter = None, cotest = False):
