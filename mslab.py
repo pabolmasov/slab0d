@@ -21,7 +21,7 @@ from multiprocessing import Pool
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
 alpha = 1e-5
-tdepl = 6e5 # r**1.5/alpha/2. # depletion time in GM/c^3 units
+tdepl = 1e6 # r**1.5/alpha/2. # depletion time in GM/c^3 units
 j = .9999*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS # time scale, s
@@ -63,7 +63,7 @@ tar = dtout * arange(nt)
 
 # outputs:
 ifplot = True # if we are plotting against the computer (disabled for now)
-ifasc = True # if we are writing ASCII output
+ifasc = False # if we are writing ASCII output
 ifzarr = True
 hname = 'slabout' # output HDF5 file name
 if ifplot:
@@ -186,7 +186,7 @@ def singlerun(krepeat):
 
 ##############################################################################
 
-def slab_evolution(nrepeat = 1, nproc = None, somega = None):
+def slab_evolution(nrepeat = 1, nproc = 1, somega = None):
     # simulates the evolution "nrepeat" times on "nproc" cores
     global hfile 
     global sinefreq

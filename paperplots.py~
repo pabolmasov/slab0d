@@ -1,3 +1,5 @@
 import mslab
+import timing_asc
 
-mslab.slab_evolution(nflick = 1., nrepeat=1000)
+mslab.slab_evolution(nflick = 2., nrepeat=1000)
+timing_asc.multispec(prefix = 'slabout', recalc = True, nbins = 100)

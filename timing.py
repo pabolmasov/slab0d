@@ -4,6 +4,7 @@ from numpy import *
 from numpy.fft import *
 from scipy.interpolate import interp1d
 from functools import partial
+import time
 
 oldscipy = False
 if oldscipy:
@@ -12,13 +13,13 @@ else:
     from scipy.optimize import root_scalar
 
 import hdfoutput as hdf
-import plots as plots
 from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha, omegaNS
 
 import multiprocessing
 from multiprocessing import Pool
 
 if ifplot:
+    import plots as plots
     import matplotlib
     from pylab import *
     from matplotlib import interactive, use
@@ -265,7 +266,7 @@ def spec_retrieve(infile, entries):
     for k in arange(size(entries)):
         t, datalist = hdf.read(infile, 0, entry = entries[k])
         if k == 0:
-                nt = size(t) ; dt = (t.max()-t.min())/double(nt)
+            nt = size(t) ; dt = (t.max()-t.min())/double(nt)
         mdotsp.define(nt, dt)
         msp.define(nt, dt)    ;    lsp.define(nt, dt)   ;  osp.define(nt, dt) 
         L, M, mdot, omega = datalist
@@ -278,6 +279,7 @@ def spec_retrieve(infile, entries):
         lsps.append(lsp)
         osp.FT(omega) ; osp.crossT(mdotsp.tilde)
         osps.append(osp)
+        print("finished "+entries[k])
     return mdotsps, msps, osps, lsps
 
 def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100):
@@ -305,8 +307,15 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     l = squeeze(asarray(list(res)))
     print(shape(l))
     #    freq = l[0,0].freq
-    mdotsps = l[:,0,:].flatten() ; msps = l[:,1,:].flatten() ; osps = l[:,2,:].flatten()
-    lsps = l[:,3,:].flatten()
+    if (nproc > 1) & (nperproc > 1):
+        mdotsps = l[:,0,:].flatten() ; msps = l[:,1,:].flatten() ; osps = l[:,2,:].flatten()
+        lsps = l[:,3,:].flatten()
+    if nproc == 1:
+        mdotsps = l[0,:].flatten() ; msps = l[1,:].flatten() ; osps = l[2,:].flatten()
+        lsps = l[3,:].flatten()
+    if nperproc == 1:
+        mdotsps = l[:,0].flatten() ; msps = l[:,1].flatten() ; osps = l[:,2].flatten()
+        lsps = l[:,3].flatten()
     print(shape(mdotsps))
     freq = mdotsps[0].freq
     nf = size(freq)
@@ -320,12 +329,13 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     t3 = time.time()
     print("parallel reading took "+str(t2-t1)+"s")
     print("merging took "+str(t3-t2)+"s")
-    
-    clf()
-    errorbar(freq, mdot_pds, yerr = dmdot_pds)
-    errorbar(freq, m_pds, yerr = dm_pds)
-    xscale('log') ; yscale('log') ; xlim(freq[freq>0.].min(), freq.max())
-    savefig('pdstest.png')
+
+    if ifplot: 
+        clf()
+        errorbar(freq, mdot_pds, yerr = dmdot_pds)
+        errorbar(freq, m_pds, yerr = dm_pds)
+        xscale('log') ; yscale('log') ; xlim(freq[freq>0.].min(), freq.max())
+        savefig('pdstest.png')
     t4 = time.time()
     
     # binning:
@@ -353,10 +363,11 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     t5 = time.time()
     asc_pdsout(freqbin, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
     asc_coherence(freqbin, [m_cross_bin, l_cross_bin, o_cross_bin], infile+'_cross')
-    plots.object_pds(freqbin, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
-    plots.object_coherence(freqbin, [m_cross_bin], infile+'_mcoherence')
-    plots.object_coherence(freqbin, [l_cross_bin], infile+'_lcoherence')
-    plots.object_coherence(freqbin, [o_cross_bin], infile+'_ocoherence')
+    if ifplot:
+        plots.object_pds(freqbin, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
+        plots.object_coherence(freqbin, [m_cross_bin], infile+'_mcoherence')
+        plots.object_coherence(freqbin, [l_cross_bin], infile+'_lcoherence')
+        plots.object_coherence(freqbin, [o_cross_bin], infile+'_ocoherence')
     t6 = time.time()
     print("binning "+str(t5-t4)+"s")
     print("outputs "+str(t6-t5)+"s")    
