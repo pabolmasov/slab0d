@@ -206,7 +206,7 @@ def asc_pdsout(freq, pdsobjects, outfile):
         for ko in arange(nobjects):
             s+=' '+str(pdsobjects[ko].av[k])+' '+str(pdsobjects[ko].densemble[k])+' '+str(pdsobjects[ko].dbin[k])
         s+=' '+str(pdsobjects[0].npoints[k])+'\n'
-        print(s)
+        #  print(s)
         fout.write(s)
     fout.close()
 
@@ -220,7 +220,7 @@ def asc_coherence(freq, cobjects, outfile):
             s+=' '+str(cobjects[ko].c[k])+' '+str(cobjects[ko].dc_ensemble[k])+' '+str(cobjects[ko].dc_bin[k])
             s+=' '+str(cobjects[ko].phlag[k])+' '+str(cobjects[ko].dphlag_ensemble[k])+' '+str(cobjects[ko].dphlag_bin[k])
         s+=' '+str(cobjects[0].npoints[k])+'\n'
-        print(s)
+        # print(s)
         fout.write(s)
     fout.close()
         
@@ -229,9 +229,11 @@ def pdsmerge(fourierlist):
     makes a mean and std arrays for PDS out of a list of "Fourier" objects
     '''
     nl = size(fourierlist)
+    print("pdsmerge: "+str(nl))
     nf = size(fourierlist[0].pds)
     pdssum = zeros(nf, dtype = double) ; pdssqsum = zeros(nf, dtype = double)
-    
+
+    print("pdsmerge: "+str(abs(fourierlist[1].pds-fourierlist[0].pds).max()))
     for k in arange(nl):
         pdssum += fourierlist[k].pds
         pdssqsum += fourierlist[k].pds**2
@@ -262,11 +264,11 @@ def spec_retrieve(infile, entries):
     trange may be of the shape [t1, t2] and sets the time limits for the series
     '''
     mdotsps = [] ; msps = [] ; lsps = [] ; osps = []
-    mdotsp = fourier() ; msp = fourier() ; lsp = fourier() ; osp = fourier()
     for k in arange(size(entries)):
         t, datalist = hdf.read(infile, 0, entry = entries[k])
         if k == 0:
             nt = size(t) ; dt = (t.max()-t.min())/double(nt)
+        mdotsp = fourier() ; msp = fourier() ; lsp = fourier() ; osp = fourier()
         mdotsp.define(nt, dt)
         msp.define(nt, dt)    ;    lsp.define(nt, dt)   ;  osp.define(nt, dt) 
         L, M, mdot, omega = datalist
@@ -279,6 +281,7 @@ def spec_retrieve(infile, entries):
         lsps.append(lsp)
         osp.FT(omega) ; osp.crossT(mdotsp.tilde)
         osps.append(osp)
+        del mdotsp ; del msp ; del lsp ; del osp
         print("finished "+entries[k])
     return mdotsps, msps, osps, lsps
 
@@ -291,11 +294,13 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     if simlimit is not None:
         nsims = minimum(nsims, simlimit)
     entrieslist = keys[:nsims]        
-    print(entrieslist)
-    nperproc = nsims//nproc
+    #  print(entrieslist)
+    nperproc = (nsims-1)//nproc+1
     # entries chunked to fit the number of cores
     entrieslist = [entrieslist[i:(i+nperproc)] for i in range(0,nsims,nperproc)]
-    #    print(entrieslist)
+    # entrieslist = [[entrieslist[i]] for i in range(0, nsims)]
+    # entrieslist = [entrieslist]
+    print(entrieslist)
     #    ii = input('L')
     t1 = time.time()
     pool = multiprocessing.Pool(processes = nproc)
@@ -304,18 +309,17 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     t2 = time.time()
     # first dimension: processor
     # second dimension: variable
-    l = squeeze(asarray(list(res)))
-    print(shape(l))
-    #    freq = l[0,0].freq
-    if (nproc > 1) & (nperproc > 1):
-        mdotsps = l[:,0,:].flatten() ; msps = l[:,1,:].flatten() ; osps = l[:,2,:].flatten()
-        lsps = l[:,3,:].flatten()
-    if nproc == 1:
-        mdotsps = l[0,:].flatten() ; msps = l[1,:].flatten() ; osps = l[2,:].flatten()
-        lsps = l[3,:].flatten()
-    if nperproc == 1:
-        mdotsps = l[:,0].flatten() ; msps = l[:,1].flatten() ; osps = l[:,2].flatten()
-        lsps = l[:,3].flatten()
+    l = asarray(list(res))
+    lshape = shape(l)
+    nsl = size(lshape)
+    print(lshape)
+    if nsl > 2:
+        mdotsps = (l[:,0,:]).flatten() ; msps = (l[:,1,:]).flatten()
+        #        print(shape(l[:,1,:]))
+        osps = (l[:,2,:]).flatten() ;   lsps = (l[:,3,:]).flatten()
+    else:
+        #    print(concatenate(l[:,0]))
+        mdotsps = concatenate(l[:,0]) ; msps = concatenate(l[:,1]) ; osps = concatenate(l[:,2]) ; lsps = concatenate(l[:,3])
     print(shape(mdotsps))
     freq = mdotsps[0].freq
     nf = size(freq)
@@ -353,7 +357,7 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     m_pds_bin.interpolmake(freq, freqbin, m_pds, dm_pds)
     l_pds_bin.interpolmake(freq, freqbin, l_pds, dl_pds)
     o_pds_bin.interpolmake(freq, freqbin, o_pds, do_pds)
-    print(m_pds_bin.av)
+    #    print(m_pds_bin.av)
     m_cross_bin.interpolmake(freq, freqbin, m_c, dm_c)
     l_cross_bin.interpolmake(freq, freqbin, l_c, dl_c)
     o_cross_bin.interpolmake(freq, freqbin, o_c, do_c)
