@@ -213,7 +213,7 @@ def asc_pdsout(freq, pdsobjects, outfile):
 def asc_coherence(freq, cobjects, outfile):
     fout = open(outfile+'.dat', 'w')
     nf = size(freq)-1 ; nobjects = size(cobjects)
-    fout.write('#  f1 f2 co1 d1co1 d2co1 phlag1 d1phlag1 d2phlag1 co2 ... ')
+    fout.write('#  f1 f2 co1 d1co1 d2co1 phlag1 d1phlag1 d2phlag1 co2 ... np\n ')
     for k in arange(nf):
         s = str(freq[k])+' '+str(freq[k+1])
         for ko in arange(nobjects):
@@ -224,38 +224,66 @@ def asc_coherence(freq, cobjects, outfile):
         fout.write(s)
     fout.close()
         
-def pdsmerge(fourierlist):
+def pdsmerge(avlist, stdlist):
     '''
     makes a mean and std arrays for PDS out of a list of "Fourier" objects
     '''
-    nl = size(fourierlist)
+    nl = size(avlist)
     print("pdsmerge: "+str(nl))
-    nf = size(fourierlist[0].pds)
+    nf = size(avlist[0].pds)
     pdssum = zeros(nf, dtype = double) ; pdssqsum = zeros(nf, dtype = double)
 
-    print("pdsmerge: "+str(abs(fourierlist[1].pds-fourierlist[0].pds).max()))
+    #    print("pdsmerge: "+str(abs(fourierlist[1].pds-fourierlist[0].pds).max()), flush=True)
     for k in arange(nl):
-        pdssum += fourierlist[k].pds
-        pdssqsum += fourierlist[k].pds**2
+        pdssum += avlist[k].pds
+        pdssqsum += stdlist[k].pds**2+avlist[k].pds**2 # dispersion + mean square
     pdsmean = pdssum/double(nl)
     pdsstd = sqrt(pdssqsum/double(nl) - pdsmean**2)
     return pdsmean, pdsstd
 
-def crossmerge(fourierlist):
+def crossmerge(avlist, stdlist):
     '''
     calculates the mean cross-spectrum (complex) and its uncertainties (stored as a complex value)
     '''
-    nl = size(fourierlist)
-    nf = size(fourierlist[0].pds)
+    nl = size(avlist)
+    nf = size(avlist[0].pds)
     crosssum = zeros(nf, dtype = complex) ; crosssqsum = zeros(nf, dtype = complex)
     for k in arange(nl):
-        crosssum += fourierlist[k].cross
-        crosssqsum += fourierlist[k].cross.real**2 + fourierlist[k].cross.imag**2 * 1j
+        crosssum += avlist[k].cross
+        crosssqsum += avlist[k].cross.real**2+stdlist[k].cross.real**2 + \
+                      ( avlist[k].cross.imag**2 + stdlist[k].cross.imag**2) * 1j
     crossmean = crosssum / double(nl)
     crossstd = sqrt(crosssqsum.real/ double(nl) - crossmean.real**2) + \
                sqrt(crosssqsum.imag/ double(nl) - crossmean.imag**2) * 1j
     return crossmean, crossstd
-    
+
+def spaver(fourierlist, nocross = False):
+    '''
+    averages a list of fourier objects and returns the mean value and dispersion, arranged as fourier objects
+    '''
+    nl = size(fourierlist)
+    nf = size(fourierlist[0].pds)
+
+    sp = fourier() ; dsp = fourier()
+    sp.pds = zeros(nf) ;   dsp.pds = zeros(nf)
+    if not(nocross):
+        sp.cross = zeros(nf, dtype = complex)  ; dsp.cross = zeros(nf, dtype = complex)
+    for k in arange(nl):
+        sp.pds += fourierlist[k].pds
+        if not(nocross):
+            sp.cross += fourierlist[k].cross
+        dsp.pds += fourierlist[k].pds**2
+        if not(nocross):
+            dsp.cross += fourierlist[k].cross.real**2 + fourierlist[k].cross.imag**2 * 1j
+    sp.freq = fourierlist[0].freq ; sp.nf = nf
+    sp.pds /= double(nl)
+    dsp.pds = sqrt(dsp.pds/double(nl) - sp.pds**2) # RMS
+    if not(nocross):
+        sp.cross /= double(nl)
+        dsp.cross = sqrt(dsp.cross.real/double(nl) - sp.cross.real**2) +\
+                    sqrt(dsp.cross.imag/double(nl) - sp.cross.imag**2) * 1j
+    return sp, dsp        
+
 def spec_retrieve(infile, entries):
     '''
     reads several entries from the zarr file, converts them to PDS and calculates mean and dispersions of the PDS, co-spectra and their uncertainties
@@ -282,8 +310,14 @@ def spec_retrieve(infile, entries):
         osp.FT(omega) ; osp.crossT(mdotsp.tilde)
         osps.append(osp)
         del mdotsp ; del msp ; del lsp ; del osp
-        print("finished "+entries[k])
-    return mdotsps, msps, osps, lsps
+        print("finished "+entries[k], flush=True)
+
+    mdotsp_av, mdotsp_std = spaver(mdotsps, nocross = True)
+    msp_av, msp_std = spaver(msps)
+    osp_av, osp_std = spaver(osps)
+    lsp_av, lsp_std = spaver(lsps)
+    return mdotsp_av, mdotsp_std, msp_av, msp_std, osp_av, osp_std, lsp_av, lsp_std
+    #    return mdotsps, msps, osps, lsps
 
 def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100):
     '''
@@ -307,31 +341,29 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     spec_retrieve_partial = partial(spec_retrieve, infile)
     res = pool.map(spec_retrieve_partial, entrieslist)
     t2 = time.time()
+    print("parallel reading took "+str(t2-t1)+"s", flush = True)
     # first dimension: processor
     # second dimension: variable
     l = asarray(list(res))
     lshape = shape(l)
     nsl = size(lshape)
     print(lshape)
-    if nsl > 2:
-        mdotsps = (l[:,0,:]).flatten() ; msps = (l[:,1,:]).flatten()
-        #        print(shape(l[:,1,:]))
-        osps = (l[:,2,:]).flatten() ;   lsps = (l[:,3,:]).flatten()
-    else:
-        #    print(concatenate(l[:,0]))
-        mdotsps = concatenate(l[:,0]) ; msps = concatenate(l[:,1]) ; osps = concatenate(l[:,2]) ; lsps = concatenate(l[:,3])
-    print(shape(mdotsps))
-    freq = mdotsps[0].freq
+    #    print(concatenate(l[:,0]))
+    # mdotsps_av = concatenate(l[:,0]) ; msps_av = concatenate(l[:,2]) ; osps_av = concatenate(l[:,4]) ; lsps_av = concatenate(l[:,6])
+    # mdotsps_std = concatenate(l[:,1]) ; msps_std = concatenate(l[:,3]) ; osps_std = concatenate(l[:,5]) ; lsps_std = concatenate(l[:,7])
+    mdotsps_av = l[:,0] ; msps_av = l[:,2] ; osps_av = l[:,4] ; lsps_av = l[:,6]
+    mdotsps_std = l[:,1] ; msps_std = l[:,3] ;  osps_std =  l[:,5] ; lsps_std = l[:,7]
+    print(shape(mdotsps_std))
+    freq = mdotsps_av[0].freq
     nf = size(freq)
-    mdot_pds, dmdot_pds = pdsmerge(mdotsps)
-    m_pds, dm_pds = pdsmerge(msps)
-    o_pds, do_pds = pdsmerge(osps)
-    l_pds, dl_pds = pdsmerge(lsps)
-    m_c, dm_c = crossmerge(msps)
-    o_c, do_c = crossmerge(osps)
-    l_c, dl_c = crossmerge(lsps)
+    mdot_pds, dmdot_pds = pdsmerge(mdotsps_av, mdotsps_std)
+    m_pds, dm_pds = pdsmerge(msps_av, msps_std)
+    o_pds, do_pds = pdsmerge(osps_av, osps_std)
+    l_pds, dl_pds = pdsmerge(lsps_av, lsps_std)
+    m_c, dm_c = crossmerge(msps_av, msps_std)
+    o_c, do_c = crossmerge(osps_av, osps_std)
+    l_c, dl_c = crossmerge(lsps_av, lsps_std)
     t3 = time.time()
-    print("parallel reading took "+str(t2-t1)+"s")
     print("merging took "+str(t3-t2)+"s")
 
     if ifplot: 
@@ -385,7 +417,7 @@ def object_pds_stored(infile, nvar = 0):
     q = lines[:, nvar*3+2] ; dq_ensemble = lines[:, nvar*3+3] ; dq_bin = lines[:, nvar*3+4]
     qobj = binobject()
     qobj.av = q ; qobj.densemble = dq_ensemble ; qobj.dbin = dq_bin ; qobj.npoints = npoints
-    plots.object_coherence(freq, [qobj], infile)
+    plots.object_pds(freq, [qobj], infile)
    
 def object_coherence_stored(infile, nvar = 0):
     lines = np.loadtxt(infile+".dat")
@@ -393,7 +425,7 @@ def object_coherence_stored(infile, nvar = 0):
     nf = size(f1)
     freq = zeros(nf+1)
     freq[:-1] = f1[:] ; freq[-1] = f2[-1]
-    c = lines[:, nvar*6+2] ; dc_ensemble = lines[:, nvar*6+3] ; dc_bin = lines[:, nvar*3+4]
+    c = lines[:, nvar*6+2] ; dc_ensemble = lines[:, nvar*6+3] ; dc_bin = lines[:, nvar*6+4]
     phlag  = lines[:, nvar*6+5] ; dphlag_ensemble = lines[:, nvar*6+6] ; dphlag_bin = lines[:, nvar*6+7]
     qobj = binobject()
     qobj.c = c ; qobj.dc_ensemble = dc_ensemble ; qobj.dc_bin = dc_bin ; qobj.npoints = npoints
