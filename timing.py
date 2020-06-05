@@ -5,6 +5,7 @@ from numpy.fft import *
 from scipy.interpolate import interp1d
 from functools import partial
 import time
+import zarr
 
 oldscipy = False
 if oldscipy:
@@ -155,10 +156,35 @@ class fourier:
     def FT(self, lc):
         self.mean = lc.mean()
         self.tilde = 2.*rfft(lc-self.mean)/lc.sum() # Miyamoto norm
-        self.pds = double(abs(self.tilde)**2)
+        self.pds = abs(self.tilde)**2
+        self.dpds = abs(self.tilde)**4
+    def addFT(self,lc):
+        tilde = 2.*rfft(lc-lc.mean())/lc.sum() # Miyamoto norm
+        self.pds +=  abs(tilde)**2
+        self.dpds +=  abs(tilde)**4
+        return tilde
+    def reFT(self, lc):
+        self.mean = lc.mean()
+        self.tilde[:] = 2.*rfft(lc-self.mean)/lc.sum() # Miyamoto norm
+        self.pds[:] = double(abs(self.tilde)**2)
     def crossT(self, lcref_fft):
-        self.cross = conj(self.tilde) * lcref_fft
-
+        cross = conj(self.tilde) * lcref_fft
+        self.cross = cross
+        self.dcross = cross.real**2 + cross.imag**2 * 1j
+    def addcrossT(self, lcref_fft, lc_fft):
+        cross = conj(lc_fft) * lcref_fft
+        self.cross += cross
+        self.dcross += cross.real**2 + cross.imag**2 * 1j
+    def recrossT(self, lcref_fft):
+        self.cross[:] = conj(self.tilde) * lcref_fft
+    def normalize(self, nl, ifcross = True):
+        self.pds /= double(nl)
+        self.pdps = sqrt(self.dpds / double(nl) - self.pds**2)
+        if ifcross: 
+            self.cross /= complex(nl)
+            self.dcross = sqrt(self.dcross.real / double(nl) - self.cross.real**2) +\
+                          sqrt(self.dcross.imag / double(nl) - self.cross.imag**2) * 1j
+        
 class binobject:
     def __init__(self):
         print('binobject')
@@ -224,7 +250,7 @@ def asc_coherence(freq, cobjects, outfile):
         fout.write(s)
     fout.close()
         
-def pdsmerge(avlist, stdlist):
+def pdsmerge(avlist):
     '''
     makes a mean and std arrays for PDS out of a list of "Fourier" objects
     '''
@@ -233,15 +259,15 @@ def pdsmerge(avlist, stdlist):
     nf = size(avlist[0].pds)
     pdssum = zeros(nf, dtype = double) ; pdssqsum = zeros(nf, dtype = double)
 
-    #    print("pdsmerge: "+str(abs(fourierlist[1].pds-fourierlist[0].pds).max()), flush=True)
+    # print("pdsmerge: "+str(abs(avlist[1].pds-avlist[0].pds).max()), flush=True)
     for k in arange(nl):
         pdssum += avlist[k].pds
-        pdssqsum += stdlist[k].pds**2+avlist[k].pds**2 # dispersion + mean square
+        pdssqsum += avlist[k].pds**2+avlist[k].dpds**2 # dispersion + mean square
     pdsmean = pdssum/double(nl)
     pdsstd = sqrt(pdssqsum/double(nl) - pdsmean**2)
     return pdsmean, pdsstd
 
-def crossmerge(avlist, stdlist):
+def crossmerge(avlist):
     '''
     calculates the mean cross-spectrum (complex) and its uncertainties (stored as a complex value)
     '''
@@ -250,8 +276,8 @@ def crossmerge(avlist, stdlist):
     crosssum = zeros(nf, dtype = complex) ; crosssqsum = zeros(nf, dtype = complex)
     for k in arange(nl):
         crosssum += avlist[k].cross
-        crosssqsum += avlist[k].cross.real**2+stdlist[k].cross.real**2 + \
-                      ( avlist[k].cross.imag**2 + stdlist[k].cross.imag**2) * 1j
+        crosssqsum += avlist[k].cross.real**2+avlist[k].dcross.real**2 + \
+                      ( avlist[k].cross.imag**2 + avlist[k].dcross.imag**2) * 1j
     crossmean = crosssum / double(nl)
     crossstd = sqrt(crosssqsum.real/ double(nl) - crossmean.real**2) + \
                sqrt(crosssqsum.imag/ double(nl) - crossmean.imag**2) * 1j
@@ -266,6 +292,8 @@ def spaver(fourierlist, nocross = False):
 
     sp = fourier() ; dsp = fourier()
     sp.pds = zeros(nf) ;   dsp.pds = zeros(nf)
+    if nl > 1:
+        print("spaver:"+str(fourierlist[1].pds.mean()-fourierlist[0].pds.mean()))
     if not(nocross):
         sp.cross = zeros(nf, dtype = complex)  ; dsp.cross = zeros(nf, dtype = complex)
     for k in arange(nl):
@@ -284,40 +312,54 @@ def spaver(fourierlist, nocross = False):
                     sqrt(dsp.cross.imag/double(nl) - sp.cross.imag**2) * 1j
     return sp, dsp        
 
-def spec_retrieve(infile, entries):
+def spread(infile, entries):
     '''
-    reads several entries from the zarr file, converts them to PDS and calculates mean and dispersions of the PDS, co-spectra and their uncertainties
-    infile is a string without extension (should be ".zarr")
-    entries is a list or array of numbers
-    trange may be of the shape [t1, t2] and sets the time limits for the series
+    reads a number of entries and outputs mean and std of the PDS and cross-spectra
     '''
-    mdotsps = [] ; msps = [] ; lsps = [] ; osps = []
-    for k in arange(size(entries)):
-        t, datalist = hdf.read(infile, 0, entry = entries[k])
-        if k == 0:
-            nt = size(t) ; dt = (t.max()-t.min())/double(nt)
-        mdotsp = fourier() ; msp = fourier() ; lsp = fourier() ; osp = fourier()
-        mdotsp.define(nt, dt)
-        msp.define(nt, dt)    ;    lsp.define(nt, dt)   ;  osp.define(nt, dt) 
-        L, M, mdot, omega = datalist
-        mdotsp.FT(mdot)
-        mdotsps.append(mdotsp)
-        msp.FT(M)
-        msp.crossT(mdotsp.tilde)
-        msps.append(msp)
-        lsp.FT(L) ; lsp.crossT(mdotsp.tilde)
-        lsps.append(lsp)
-        osp.FT(omega) ; osp.crossT(mdotsp.tilde)
-        osps.append(osp)
-        del mdotsp ; del msp ; del lsp ; del osp
-        print("finished "+entries[k], flush=True)
+    nl = size(entries)
+    hfile = zarr.open(infile+".zarr", "r")
+    glo=hfile["globals"]
+    time=glo["time"][:]
+    nt = size(time) ; dt = (time.max()-time.min())/double(nt)
 
-    mdotsp_av, mdotsp_std = spaver(mdotsps, nocross = True)
-    msp_av, msp_std = spaver(msps)
-    osp_av, osp_std = spaver(osps)
-    lsp_av, lsp_std = spaver(lsps)
-    return mdotsp_av, mdotsp_std, msp_av, msp_std, osp_av, osp_std, lsp_av, lsp_std
-    #    return mdotsps, msps, osps, lsps
+    mdotsp = fourier() ; msp = fourier() ; lsp = fourier() ; osp = fourier()
+    #   mdotsp_std = fourier() ; msp_std = fourier() ; lsp_std = fourier() ; osp_std = fourier()
+    mdotsp.define(nt, dt) ; msp.define(nt, dt)    ;    lsp.define(nt, dt)   ;  osp.define(nt, dt) 
+    #  mdotsp_std.define(nt, dt) ; msp_std.define(nt, dt)    ;    lsp_std.define(nt, dt)   ;  osp_std.define(nt, dt) 
+    for k in arange(nl):
+        data = hfile[entries[k]]
+        if k==0:
+            vals = data.keys()
+            print(vals)
+        L = data['L'][:] ; M = data['M'][:]  ; mdot = data['mdot'][:] ; omega = data['omega'][:]
+        if k == 0:
+            mdotsp.FT(mdot)
+            msp.FT(M)  ;  msp.crossT(mdotsp.tilde)
+            lsp.FT(L) ; lsp.crossT(mdotsp.tilde)
+            osp.FT(omega) ; osp.crossT(mdotsp.tilde)
+        else:
+            mdot_fft = mdotsp.addFT(mdot)
+            m_fft = msp.addFT(M)  ;  msp.addcrossT(mdot_fft, m_fft)
+            l_fft = lsp.addFT(L) ; lsp.addcrossT(mdot_fft, l_fft)
+            o_fft = osp.addFT(omega) ; osp.addcrossT(mdot_fft, o_fft)
+            
+        #    mdotsp.reFT(mdot)
+        #    msp.reFT(M)   ;     msp.recrossT(mdotsp.tilde)
+        #    lsp.reFT(L) ; lsp.recrossT(mdotsp.tilde)
+        #    osp.reFT(omega) ; osp.recrossT(mdotsp.tilde)
+        #        mdotsps.append(mdotsp) ;        msps.append(msp)
+        # lsps.append(lsp) ;        osps.append(osp)
+        #  del mdotsp ; del msp ; del lsp ; del osp
+        #      print("finished "+entries[k]+", mean"+str(mdotsps[-1].pds.mean()), flush=True)
+        
+    #    mdotsp_av, mdotsp_std = spaver(mdotsps, nocross = True)
+    #    msp_av, msp_std = spaver(msps)
+    #    osp_av, osp_std = spaver(osps)
+    #    lsp_av, lsp_std = spaver(lsps)
+    mdotsp.normalize(nl, ifcross = False) ; msp.normalize(nl) ; lsp.normalize(nl) ; osp.normalize(nl)    
+    
+    return mdotsp, msp, lsp, osp
+        
 
 def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100):
     '''
@@ -338,7 +380,7 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     #    ii = input('L')
     t1 = time.time()
     pool = multiprocessing.Pool(processes = nproc)
-    spec_retrieve_partial = partial(spec_retrieve, infile)
+    spec_retrieve_partial = partial(spread, infile)
     res = pool.map(spec_retrieve_partial, entrieslist)
     t2 = time.time()
     print("parallel reading took "+str(t2-t1)+"s", flush = True)
@@ -351,18 +393,17 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     #    print(concatenate(l[:,0]))
     # mdotsps_av = concatenate(l[:,0]) ; msps_av = concatenate(l[:,2]) ; osps_av = concatenate(l[:,4]) ; lsps_av = concatenate(l[:,6])
     # mdotsps_std = concatenate(l[:,1]) ; msps_std = concatenate(l[:,3]) ; osps_std = concatenate(l[:,5]) ; lsps_std = concatenate(l[:,7])
-    mdotsps_av = l[:,0] ; msps_av = l[:,2] ; osps_av = l[:,4] ; lsps_av = l[:,6]
-    mdotsps_std = l[:,1] ; msps_std = l[:,3] ;  osps_std =  l[:,5] ; lsps_std = l[:,7]
-    print(shape(mdotsps_std))
+    mdotsps_av = l[:,0] ; msps_av = l[:,1] ; osps_av = l[:,2] ; lsps_av = l[:,3]
+    #    mdotsps_std = l[:,1] ; msps_std = l[:,3] ;  osps_std =  l[:,5] ; lsps_std = l[:,7]
     freq = mdotsps_av[0].freq
     nf = size(freq)
-    mdot_pds, dmdot_pds = pdsmerge(mdotsps_av, mdotsps_std)
-    m_pds, dm_pds = pdsmerge(msps_av, msps_std)
-    o_pds, do_pds = pdsmerge(osps_av, osps_std)
-    l_pds, dl_pds = pdsmerge(lsps_av, lsps_std)
-    m_c, dm_c = crossmerge(msps_av, msps_std)
-    o_c, do_c = crossmerge(osps_av, osps_std)
-    l_c, dl_c = crossmerge(lsps_av, lsps_std)
+    mdot_pds, dmdot_pds = pdsmerge(mdotsps_av)
+    m_pds, dm_pds = pdsmerge(msps_av)
+    o_pds, do_pds = pdsmerge(osps_av)
+    l_pds, dl_pds = pdsmerge(lsps_av)
+    m_c, dm_c = crossmerge(msps_av)
+    o_c, do_c = crossmerge(osps_av)
+    l_c, dl_c = crossmerge(lsps_av)
     t3 = time.time()
     print("merging took "+str(t3-t2)+"s")
 
