@@ -78,7 +78,7 @@ def curvestat(infile, nproc = 1, nentries = 1):
 
     l = squeeze(asarray(list(res)))
     t = l[0,0,:] ; xsum = l[:,1,:].sum(axis=0) ; xsumsq = l[:,2,:].sum(axis=0)
-
+    print((l[0,1,:]-l[1,1,:]).max())
     xmean = xsum / double(nentries)
     xstd = sqrt(xsumsq / double(nentries) - xmean**2)
 

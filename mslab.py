@@ -41,7 +41,7 @@ print("Omega +/- = "+str(omegaplus)+", "+str(omegaminus)+"\Omega_K \n")
 regimes = ['const', 'sine', 'flick', 'brown']
 regime = 'flick'
 
-nflick = 2.
+nflick = 1.3
 tbreak = tdepl
 # accretion rate and amplitude:
 mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
@@ -53,8 +53,8 @@ samp = 0.5 # amplitude of the sine
 # time grid
 maxtimescale = (tdepl+1./alpha)
 mintimescale = 1./(1./tdepl+alpha)
-dtout = 1e-2*mintimescale # this gives 10^5 data points
-tmax = 100.*maxtimescale
+dtout = 3e-2*mintimescale # this gives 10^5 data points
+tmax = 30.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
 print("alpha = "+str(alpha))
@@ -71,6 +71,7 @@ if ifplot:
 
 import noize
 import hdfoutput as hdf
+from timing import spec_parallel
 
 def onestep(m, l, mdot):
     '''
@@ -97,7 +98,7 @@ def onestep(m, l, mdot):
     #    print(omegaNS)
     return dm, dl, lout, cth
 
-def singlerun(krepeat):
+def singlerun(krepeat, ooutput = False):
     '''
     evolution of a layer spun up by a variable mass accretion rate. 
     If nflick is set, it is the power-law index of the noize spectrum
@@ -182,7 +183,10 @@ def singlerun(krepeat):
         hdf.dump(hfile, krepeat, ["mdot", "L", "M", "omega"], [mdotar, loutar, mar, orotar])
     if ifplot and regime == 'const':
         plots.mconsttests(tar, mar*mscale, orotar, meq, oeq)
-    return orotar.mean(), orotar.std(), oeq
+    if ooutput:
+        return orotar.mean(), orotar.std(), oeq
+    else:
+        return tar, mdotar, loutar, mar, orotar
 
 ##############################################################################
 
@@ -201,7 +205,10 @@ def slab_evolution(nrepeat = 1, nproc = 1, somega = None):
     print(krepeat)
     if nproc is not None:
         pool = multiprocessing.Pool(nproc)
-        pool.map(singlerun, krepeat)
+        outlist = pool.map(singlerun, krepeat)
+        pool.close()
+        print(shape(outlist))
+        spec_parallel(hname, nproc = nproc, rawdata = outlist, binning = 1000)
     else:
         print('sequential mapping\n')
         # [singlerun(x, nflick=nflick, tbreak=tbreak, hfile=hfile) for x in krepeat]
@@ -209,7 +216,7 @@ def slab_evolution(nrepeat = 1, nproc = 1, somega = None):
         if not ifzarr:
             hfile.close()
             
-def tvar(nrepeat = 10):
+def tvar(nrepeat = 30):
     '''
     special regime with variable tdepl
     '''
@@ -231,7 +238,7 @@ def tvar(nrepeat = 10):
     fout = open('tvar.dat', 'w')
     for k in arange(nd):
         tdepl = tdar[k]
-        omean, ostd, ooeq = singlerun(k)
+        omean, ostd, ooeq = singlerun(k, ooutput = True)
         omar[k] = omean * (2.*pi*tscale) ; ostar[k] = ostd * (2.*pi*tscale) ; oeq[k] = ooeq
         print(str(alpha*tdepl)+" "+str(omean)+" "+str(ostd)+"\n")
         fout.write(str(alpha*tdepl/dtdyn)+" "+str(omar[k]*r**1.5)+" "+str(ostar[k]*r**1.5)+" "+str(oeq[k] * r**1.5)+"\n")

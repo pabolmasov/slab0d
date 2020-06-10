@@ -67,86 +67,7 @@ def logABC(x, frange, rhs):
     print("ccoef = "+str(ccoef))
     
     return acoef * exp( bcoef * x) + ccoef
-     
-def spec_onevar(varno, infile = 'slabout', trange = [0.0, 1e10], binning = 100, logbinning = False, simfilter = None, cotest = False):
-    '''
-    makes spectra and cross-spectra for a given parameter of the output
-    varno is the number of the output variable: 0 is luminosity, 1 is mass, 2 is mdot, 3 is orot
-    '''
-    keys = hdf.keyshow(infile)
-    nsims = size(keys)-1 # one key points to globals
-
-    if simfilter is not None:
-        keys = keys[simfilter[0]:simfilter[1]]
-        nsims  = size(keys)-1
-    for k in arange(nsims):
-        t, datalist = hdf.read(infile, 0, entry = keys[k])
-        v = datalist[varno] ; mdot = datalist[2]
-        if trange is not None:
-            w = (t>trange[0]) * (t<trange[1])
-            t=t[w] ; v=v[w] ; mdot=mdot[w]
-        if k == 0:
-            nt = size(t) ;  tspan = t.max() - t.min() 
-            dt = tspan / double(nt)
-            print("dt = "+str(dt)+"\n")
-            #frequencies:
-            freq = rfftfreq(nt, d=dt)
-            print("no of freqs = "+str(size(freq)))
-            print("nt = "+str(nt))
-            nf = size(freq)
-            mdot_PDS_av = zeros(nf, dtype = double)
-            mdot_PDS_std = zeros(nf, dtype = double)
-            v_PDS_av = zeros(nf, dtype = double)
-            v_PDS_std = zeros(nf, dtype = double)
-            v_cross_av = zeros(nf, dtype = complex)
-            v_dcross_im = zeros(nf, dtype = double)
-            v_dcross_re = zeros(nf, dtype = double)
-        # Fourier images
-        mdot_f=2.*rfft(mdot-mdot.mean())/mdot.sum()  # last axis is the FFT by default
-        v_f = 2.*rfft(v-v.mean())/v.sum()
-        mdot_PDS = abs(mdot_f)**2 ; v_PDS = abs(v_f)**2
-        mdot_PDS_av += mdot_PDS ; mdot_PDS_std += mdot_PDS**2
-        v_PDS_av += v_PDS ; v_PDS_std += v_PDS**2
-        v_cross = copy(mdot_f * conj(v_f))
-        v_cross_av += v_cross 
-        v_dcross_im += v_cross.imag**2 ;   v_dcross_re += v_cross.real**2 # dispersions of imaginary and real components
-    # mean values:
-    mdot_PDS_av /= (nsims) ; v_PDS_av /= (nsims) ;    v_cross_av /= (nsims)
-    # RMS:
-    mdot_PDS_std = sqrt(mdot_PDS_std / double(nsims) - mdot_PDS_av**2) / sqrt(double(nsims-1))
-    v_PDS_std = sqrt(v_PDS_std / double(nsims) - v_PDS_av**2) / sqrt(double(nsims-1))
-    v_coherence = abs(v_cross)/sqrt(v_PDS_av*mdot_PDS_av)
-    v_phaselag = angle(v_cross)
-    v_dcross_im = sqrt(v_dcross_im / double(nsims) - v_cross_av.imag**2) / sqrt(double(nsims-1))
-    v_dcross_re = sqrt(v_dcross_re / double(nsims) - v_cross_av.real**2) / sqrt(double(nsims-1))
-    v_dcoherence = 0.5 * ((v_dcross_im * abs(v_cross_av.imag) + v_dcross_re * abs(v_cross_av.real))*2./abs(v_cross_av)**2
-                          + v_PDS_std / v_PDS_av + mdot_PDS_std / mdot_PDS_av) * v_coherence
-    v_dphaselag = (v_dcross_im * abs(v_cross_av.real) + v_dcross_re * abs(v_cross_av.imag))/abs(v_cross_av)**2
-
-    if ifplot:
-        w = (freq > 0.)
-        clf()
-        fig, ax = subplots(2,1)
-        ax[0].errorbar(freq[w], v_phaselag[w],
-                       yerr =  v_dphaselag[w], fmt = 'k.')
-        ax[0].plot(freq[w], arctan(2.*pi*freq[w]*tdepl*tscale), 'c-', linewidth = 3)
-        ax[0].plot(freq[w], freq[w]*0., 'r-')
-        ax[0].plot(freq[w], freq[w]*0.+pi/2., 'r-')
-        ax[0].plot(freq[w], freq[w]*0.+pi, 'r-')
-        ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18)
-        ax[1].errorbar(freq[w], v_coherence[w], yerr = v_dcoherence[w], fmt = 'k.')
-        ax[1].set_xscale('log') ; ax[0].set_ylim(-pi,pi) ; ax[1].set_ylim(-pi,pi)
-        ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
-        ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-        ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
-        ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-        ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-        fig.set_size_inches(5, 6)
-        fig.tight_layout()
-        savefig('coherence.png')
-        savefig('coherence.eps')
-        close('all')    
-
+  
 ############################################################################   
 # Fourier namespace (does not deserve the name "class")
 class fourier:
@@ -283,38 +204,11 @@ def crossmerge(avlist):
                sqrt(crosssqsum.imag/ double(nl) - crossmean.imag**2) * 1j
     return crossmean, crossstd
 
-def spaver(fourierlist, nocross = False):
-    '''
-    averages a list of fourier objects and returns the mean value and dispersion, arranged as fourier objects
-    '''
-    nl = size(fourierlist)
-    nf = size(fourierlist[0].pds)
-
-    sp = fourier() ; dsp = fourier()
-    sp.pds = zeros(nf) ;   dsp.pds = zeros(nf)
-    if nl > 1:
-        print("spaver:"+str(fourierlist[1].pds.mean()-fourierlist[0].pds.mean()))
-    if not(nocross):
-        sp.cross = zeros(nf, dtype = complex)  ; dsp.cross = zeros(nf, dtype = complex)
-    for k in arange(nl):
-        sp.pds += fourierlist[k].pds
-        if not(nocross):
-            sp.cross += fourierlist[k].cross
-        dsp.pds += fourierlist[k].pds**2
-        if not(nocross):
-            dsp.cross += fourierlist[k].cross.real**2 + fourierlist[k].cross.imag**2 * 1j
-    sp.freq = fourierlist[0].freq ; sp.nf = nf
-    sp.pds /= double(nl)
-    dsp.pds = sqrt(dsp.pds/double(nl) - sp.pds**2) # RMS
-    if not(nocross):
-        sp.cross /= double(nl)
-        dsp.cross = sqrt(dsp.cross.real/double(nl) - sp.cross.real**2) +\
-                    sqrt(dsp.cross.imag/double(nl) - sp.cross.imag**2) * 1j
-    return sp, dsp        
-
 def spread(infile, entries):
     '''
     reads a number of entries and outputs mean and std of the PDS and cross-spectra
+    infile is the input -zarr file
+    entries is the list/array of the entries
     '''
     nl = size(entries)
     hfile = zarr.open(infile+".zarr", "r")
@@ -342,70 +236,93 @@ def spread(infile, entries):
             m_fft = msp.addFT(M)  ;  msp.addcrossT(mdot_fft, m_fft)
             l_fft = lsp.addFT(L) ; lsp.addcrossT(mdot_fft, l_fft)
             o_fft = osp.addFT(omega) ; osp.addcrossT(mdot_fft, o_fft)
-            
-        #    mdotsp.reFT(mdot)
-        #    msp.reFT(M)   ;     msp.recrossT(mdotsp.tilde)
-        #    lsp.reFT(L) ; lsp.recrossT(mdotsp.tilde)
-        #    osp.reFT(omega) ; osp.recrossT(mdotsp.tilde)
-        #        mdotsps.append(mdotsp) ;        msps.append(msp)
-        # lsps.append(lsp) ;        osps.append(osp)
-        #  del mdotsp ; del msp ; del lsp ; del osp
-        #      print("finished "+entries[k]+", mean"+str(mdotsps[-1].pds.mean()), flush=True)
-        
-    #    mdotsp_av, mdotsp_std = spaver(mdotsps, nocross = True)
-    #    msp_av, msp_std = spaver(msps)
-    #    osp_av, osp_std = spaver(osps)
-    #    lsp_av, lsp_std = spaver(lsps)
     mdotsp.normalize(nl, ifcross = False) ; msp.normalize(nl) ; lsp.normalize(nl) ; osp.normalize(nl)    
     
     return mdotsp, msp, lsp, osp
-        
 
-def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100):
+def to_fft(lclist):
+    '''
+    makes PDSs and cross-spectra from a list of light curves from several simulations
+    '''
+    s = shape(lclist)
+    nl, nvar, nt = s # number of simulations, number of variables, number of data points
+    print(shape(lclist))
+    tar = squeeze(lclist[0][0][:]) * tscale
+    dt = (tar.max()-tar.min())/double(nt)
+    mdotsp = fourier() ; msp = fourier() ; lsp = fourier() ; osp = fourier()
+    mdotsp.define(nt, dt) ; msp.define(nt, dt)    ;    lsp.define(nt, dt)   ;  osp.define(nt, dt) 
+    for k in arange(nl):
+        mdot = squeeze(lclist[k][1][:]) ; L = squeeze(lclist[k][2][:]) ; M = squeeze(lclist[k][3][:]) ; omega = squeeze(lclist[k][4][:])
+        if k == 0:
+            mdotsp.FT(mdot)
+            msp.FT(M)  ;  msp.crossT(mdotsp.tilde)
+            lsp.FT(L) ; lsp.crossT(mdotsp.tilde)
+            osp.FT(omega) ; osp.crossT(mdotsp.tilde)
+        else:
+            mdot_fft = mdotsp.addFT(mdot)
+            m_fft = msp.addFT(M)  ;  msp.addcrossT(mdot_fft, m_fft)
+            l_fft = lsp.addFT(L) ; lsp.addcrossT(mdot_fft, l_fft)
+            o_fft = osp.addFT(omega) ; osp.addcrossT(mdot_fft, o_fft)
+    mdotsp.normalize(nl, ifcross = False) ; msp.normalize(nl) ; lsp.normalize(nl) ; osp.normalize(nl)    
+    
+    return mdotsp, msp, lsp, osp
+
+def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100, rawdata = None):
     '''
     reads from a zarr file light curves in parallel, calculates and merges PDS and cross-spectra
     '''
-    keys = hdf.keyshow(infile)
-    nsims = size(keys)-1 # one key points to globals
-    if simlimit is not None:
-        nsims = minimum(nsims, simlimit)
-    entrieslist = keys[:nsims]        
-    #  print(entrieslist)
-    nperproc = (nsims-1)//nproc+1
-    # entries chunked to fit the number of cores
-    entrieslist = [entrieslist[i:(i+nperproc)] for i in range(0,nsims,nperproc)]
-    # entrieslist = [[entrieslist[i]] for i in range(0, nsims)]
-    # entrieslist = [entrieslist]
-    print(entrieslist)
-    #    ii = input('L')
     t1 = time.time()
-    pool = multiprocessing.Pool(processes = nproc)
-    spec_retrieve_partial = partial(spread, infile)
-    res = pool.map(spec_retrieve_partial, entrieslist)
-    t2 = time.time()
-    print("parallel reading took "+str(t2-t1)+"s", flush = True)
-    # first dimension: processor
-    # second dimension: variable
-    l = asarray(list(res))
-    lshape = shape(l)
-    nsl = size(lshape)
-    print(lshape)
-    #    print(concatenate(l[:,0]))
-    # mdotsps_av = concatenate(l[:,0]) ; msps_av = concatenate(l[:,2]) ; osps_av = concatenate(l[:,4]) ; lsps_av = concatenate(l[:,6])
-    # mdotsps_std = concatenate(l[:,1]) ; msps_std = concatenate(l[:,3]) ; osps_std = concatenate(l[:,5]) ; lsps_std = concatenate(l[:,7])
-    mdotsps_av = l[:,0] ; msps_av = l[:,1] ; osps_av = l[:,2] ; lsps_av = l[:,3]
-    #    mdotsps_std = l[:,1] ; msps_std = l[:,3] ;  osps_std =  l[:,5] ; lsps_std = l[:,7]
-    freq = mdotsps_av[0].freq
-    nf = size(freq)
-    mdot_pds, dmdot_pds = pdsmerge(mdotsps_av)
-    m_pds, dm_pds = pdsmerge(msps_av)
-    o_pds, do_pds = pdsmerge(osps_av)
-    l_pds, dl_pds = pdsmerge(lsps_av)
-    m_c, dm_c = crossmerge(msps_av)
-    o_c, do_c = crossmerge(osps_av)
-    l_c, dl_c = crossmerge(lsps_av)
-    t3 = time.time()
-    print("merging took "+str(t3-t2)+"s")
+    if rawdata is None:
+        keys = hdf.keyshow(infile)
+        nsims = size(keys)-1 # one key points to globals
+        if simlimit is not None:
+            nsims = minimum(nsims, simlimit)
+        entrieslist = keys[:nsims]        
+        #  print(entrieslist)
+        nperproc = (nsims-1)//nproc+1
+        # entries chunked to fit the number of cores
+        entrieslist = [entrieslist[i:(i+nperproc)] for i in range(0,nsims,nperproc)]
+        # entrieslist = [[entrieslist[i]] for i in range(0, nsims)]
+        # entrieslist = [entrieslist]
+        print(entrieslist)
+        #    ii = input('L')
+        pool = multiprocessing.Pool(processes = nproc)
+        spec_retrieve_partial = partial(spread, infile)
+        res = pool.map(spec_retrieve_partial, entrieslist)
+        t2 = time.time()
+        print("parallel reading took "+str(t2-t1)+"s", flush = True)
+        # first dimension: processor
+        # second dimension: variable
+        l = asarray(list(res))
+        lshape = shape(l)
+        nsl = size(lshape)
+        print(lshape)
+        mdotsps_av = l[:,0] ; msps_av = l[:,1] ; lsps_av = l[:,2] ; osps_av = l[:,3]
+        freq = mdotsps_av[0].freq
+        nf = size(freq)
+        mdot_pds, dmdot_pds = pdsmerge(mdotsps_av)
+        m_pds, dm_pds = pdsmerge(msps_av)
+        o_pds, do_pds = pdsmerge(osps_av)
+        l_pds, dl_pds = pdsmerge(lsps_av)
+        m_c, dm_c = crossmerge(msps_av)
+        o_c, do_c = crossmerge(osps_av)
+        l_c, dl_c = crossmerge(lsps_av)
+        t3 = time.time()
+        print("merging took "+str(t3-t2)+"s")
+    else:
+        mdotsps_av, msps_av, lsps_av, osps_av = to_fft(rawdata)
+        mdot_pds = mdotsps_av.pds ; dmdot_pds = mdotsps_av.dpds 
+        m_pds = msps_av.pds ; dm_pds = msps_av.dpds
+        o_pds = osps_av.pds ; do_pds = osps_av.dpds
+        l_pds = lsps_av.pds ; dl_pds = lsps_av.dpds
+        m_c = msps_av.cross ; dm_c = msps_av.dcross
+        o_c = osps_av.cross ; do_c = osps_av.dcross        
+        l_c = lsps_av.cross ; dl_c = lsps_av.dcross
+        freq = mdotsps_av.freq
+        nf = size(freq)
+        t2 = time.time()
+        t3 =t2
+        print("fft took "+str(t2-t1)+"s", flush = True)
 
     if ifplot: 
         clf()
@@ -421,10 +338,9 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     mdot_pds_bin = binobject()  ; m_pds_bin = binobject() ; l_pds_bin = binobject()  ;  o_pds_bin = binobject()
     mdot_cross_bin = binobject()  ; m_cross_bin = binobject() ; l_cross_bin = binobject()  ;  o_cross_bin = binobject()
     freq1 = freq[freq>0.].min() ; freq2 = freq.max()
-    #  freqbin = (freq2/freq1)**(arange(nbins+1)/double(nbins))*freq1
     kfactor = 5
     x = arange(nbins+1)/double(nbins)
-    freqbin = logABC(x, [freq1, freq2], kfactor * double(nbins)/ double(nf))
+    freqbin = logABC(x, [freq1, freq2], kfactor * double(nbins)/ double(nf)) # quasi-exponential grid
     freqbin[0] = 0.
     mdot_pds_bin.interpolmake(freq, freqbin, mdot_pds, dmdot_pds)
     m_pds_bin.interpolmake(freq, freqbin, m_pds, dm_pds)
@@ -447,7 +363,8 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
         plots.object_coherence(freqbin, [o_cross_bin], infile+'_ocoherence')
     t6 = time.time()
     print("binning "+str(t5-t4)+"s")
-    print("outputs "+str(t6-t5)+"s")    
+    print("outputs "+str(t6-t5)+"s")
+    print("total time "+str(t6-t1)+"s")
 
 def object_pds_stored(infile, nvar = 0):
     lines = np.loadtxt(infile+".dat")
@@ -490,6 +407,8 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
     keys = hdf.keyshow(infile)
     nsims = size(keys)-1 # one key points to globals
 
+    time1 = time.time()
+    
     if simfilter is not None:
         keys = keys[simfilter[0]:simfilter[1]]
         nsims  = size(keys)-1
@@ -763,6 +682,8 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
             plots.coherence(binfreq, mass_coherence_avbin, mass_dcoherence_ensemble, mass_dcoherence_bin,
                             mass_phaselag_avbin, mass_dphaselag_ensemble, mass_dphaselag_bin, npoints, outfile = 'm_cobin')
 
+    time2 = time.time()
+    print("calculation took "+str(time2-time1)+"s in total \n")
             
 def spec_readall(infile = 'slabout', trange = [0.1,1e5]):
     '''
