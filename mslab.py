@@ -20,8 +20,8 @@ from multiprocessing import Pool
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-5
-tdepl = 1e6 # r**1.5/alpha/2. # depletion time in GM/c^3 units
+alpha = 1e-6
+tdepl = 1.e7 # r**1.5/alpha/2. # depletion time in GM/c^3 units
 j = .9999*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS # time scale, s
@@ -41,25 +41,25 @@ print("Omega +/- = "+str(omegaplus)+", "+str(omegaminus)+"\Omega_K \n")
 regimes = ['const', 'sine', 'flick', 'brown']
 regime = 'flick'
 
-nflick = 1.3
+nflick = 2.0
 tbreak = tdepl
 # accretion rate and amplitude:
 mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
 dmdot =  .5 # relative variation dispersion
-
-sinefreq = 2.*pi * 10. * tscale # frequency of the sinusoudal variation
-samp = 0.5 # amplitude of the sine
-
 # time grid
 maxtimescale = (tdepl+1./alpha)
 mintimescale = 1./(1./tdepl+alpha)
 dtout = 3e-2*mintimescale # this gives 10^5 data points
-tmax = 30.*maxtimescale
+tmax = 50.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
 print("alpha = "+str(alpha))
 print("tdepl = "+str(tdepl))
 tar = dtout * arange(nt)
+
+sinefreq = 2.*pi * 0.1 / mintimescale  # frequency of the sinusoudal variation
+samp = 0.05 # amplitude of the sine
+print("somega = "+str(sinefreq/tscale))
 
 # outputs:
 ifplot = True # if we are plotting against the computer (disabled for now)
@@ -117,7 +117,7 @@ def singlerun(krepeat, ooutput = False):
     m =  meq # starting mass, 100% equilibrium
     l = oeq*r**2*m   # starting angular momentum, = equilibrium
     t = 0. ; dt = 0.1 ; ctr = 0
-    dt_est = .05/(1./mintimescale+1./dtout)
+    dt_est = dtout*0.25
     # setting the input mdot variability spectrum:
     if regime == 'flick':
         tint, mint = noize.flickgen(tmax, dt_est, nslope = nflick, rseed = krepeat)
@@ -130,7 +130,8 @@ def singlerun(krepeat, ooutput = False):
     if (regime == 'flick') | (regime == 'brown'):
         mint = mdot * exp( (mint-mmean)/mrms * dmdot)
         mconst = False
-        mfun = interp1d(tint, mint, bounds_error = False, fill_value=(mint[0], mint[-1]))
+        mfun = interp1d(tint, mint, bounds_error = False, fill_value='extrapolate', kind='nearest')
+                        # (mint[0], mint[-1]), kind='nearest')
     if regime == 'sine':
         mfun = noize.randomsin(mdot, sinefreq, samp, rseed = krepeat)
         mconst = False
@@ -150,15 +151,17 @@ def singlerun(krepeat, ooutput = False):
         if regime == 'sine':
             fout.write('# sine wave with omega = '+str(sinefreq)+' and amplitude '+str(samp)+'\n')
         fout.write('# t  mdot m lout orot\n')
-    mdotar = zeros(nt) ; loutar = zeros(nt) ; mar = zeros(nt) ; orotar = zeros(nt)
+    mdotar = zeros(nt, dtype = double) ; loutar = zeros(nt) ; mar = zeros(nt) ; orotar = zeros(nt)
     while((t<tmax) & (ctr<nt)):           
         # halfstep:
-        dt = .25/(10.*mdot/m + 10.*mdot*j/l + 10./tdepl+1./dtout+1.*alpha)
+        dt = .5/(10.*mdot/m + 10.*mdot*j/l + 10./tdepl+1./dtout+1.*alpha)
         if mconst:
-            mdotcurrent = mdot
-            mdotcurrent1 = mdot
+            if t <= dt:            
+                mdotcurrent = mdot
+                mdotcurrent1 = mdot
         else:
-            mdotcurrent = mfun(t)
+            if t <= dt:
+                mdotcurrent = mfun(t)
             mdotcurrent1 = mfun(t+dt/2.)
         dm, dl, lout, cth = onestep(m, l, mdotcurrent)
         if isinf(dm+dl):
@@ -166,17 +169,23 @@ def singlerun(krepeat, ooutput = False):
             print("dl = "+str(dl))
             ii=input("ddl")
         m1 = m+dm*dt/2. ; l1 = l + dl*dt/2. ; t1 = t+dt/2.
-        dm, dl, lout, cth = onestep(m1, l1, mdotcurrent1)
+        dm, dl, lout1, cth = onestep(m1, l1, mdotcurrent1)
         m += dm*dt ; l += dl*dt ; t +=dt
 
+        mdotcurrent = mfun(t) 
         if(t>=tstore):
-            orot = l / m /r**2/tscale / 2. /pi
+            # t is a bit offset!
+            mdotreal = mfun(tstore) # (mdotcurrent-mdotcurrent1) * (tstore - t) * 2. / dt + mdotcurrent
+            mreal = (tstore - t) * dm + m
+            lreal = (tstore - t) * dl + l
+            orot = lreal / mreal /r**2/tscale / 2. /pi
+            loutreal = (lout-lout1) * ((t-dt) - tstore) * 2. / dt + lout
             if ifasc:
-                fout.write(str(t*tscale)+" "+str(mdotcurrent1/4./pi)+" "+str(m)+" "+str(lout/ (4.*pi))+" "+str(orot)+"\n")
+                fout.write(str(tstore*tscale)+" "+str(mdotreal/4./pi)+" "+str(mreal)+" "+str(loutreal/ (4.*pi))+" "+str(orot)+"\n")
                 fout.flush()
-            tstore += dtout
-            mdotar[ctr] = mdotcurrent1/ (4.*pi) ; loutar[ctr] = lout/ (4.*pi) ; mar[ctr] = m1 ; orotar[ctr] = orot
+            mdotar[ctr] = mdotreal/(4.*pi) ; loutar[ctr] = loutreal/ (4.*pi) ; mar[ctr] = mreal ; orotar[ctr] = orot
             ctr+=1
+            tstore += dtout
     if ifasc:
         fout.close()
     if hfile is not None:
@@ -223,9 +232,12 @@ def tvar(nrepeat = 30):
     global tdepl
     global hfile
     global hname
+    global tmax
 
     hname = 'tvar'
 
+    tmax = maximum(tmax, 1000.)
+    
     td1 = dtdyn / alpha * 0.4
     td2 = 2.5 * td1
     nd = nrepeat

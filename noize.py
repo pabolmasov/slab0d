@@ -24,9 +24,12 @@ def flickgen(tmax, dt, nslope = 2, ifplot = False, rseed = None):
     nx = int(floor(tmax/dt))
     t = arange(nx)*dt
     fwhite = rand(nx)
-    freqfilter = abs(fftfreq(nx))**(-nslope/2.) * exp(1j * rand(nx)*2.*pi) 
-    freqfilter[isnan(freqfilter)] = 0.
-    freqfilter[isinf(freqfilter)] = 0.
+    freq = fftfreq(nx)
+    df = (1.-freq.min()/freq.max())/double(size(freq))
+    freqfilter = abs(freq/freq.max() + df * 0.1j)**(-nslope/2.) * exp(1j * rand(nx)*2.*pi) 
+    #    freqfilter[isnan(freqfilter)] = 0.
+    #    freqfilter[isinf(freqfilter)] = 0.
+    # 
     f = ifft(fft(fwhite)*freqfilter)
 
     return t, real(f)
@@ -52,5 +55,5 @@ def randomsin(mdot, sinefreq, samp, rseed = None):
     if rseed is not None:
         seed(seed=rseed)
     sinedphi = rand()
-    s = lambda x: mdot * (1. + samp * sin(sinefreq * x + sinedphi))
+    s = lambda x: mdot * (1. + samp * sin(sinefreq * double(x) + sinedphi))
     return s

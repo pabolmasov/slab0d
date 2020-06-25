@@ -3,17 +3,20 @@ import numpy.fft
 from numpy import *
 from numpy.fft import *
 from scipy.interpolate import interp1d
+from scipy.optimize import curve_fit
 from functools import partial
 
+# from timing import oldscipy
 oldscipy = False
+
 if oldscipy:
     from scipy.optimize import fsolve
 else:
     from scipy.optimize import root_scalar
 
 import hdfoutput as hdf
-import plots as plots
-from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha, omegaNS
+#import plots as plots
+from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha, omegaNS, regime
 
 import multiprocessing
 from multiprocessing import Pool
@@ -23,6 +26,8 @@ if ifplot:
     import matplotlib
     from pylab import *
     from matplotlib import interactive, use
+    import matplotlib.cm as cm
+    from matplotlib.colors import Normalize
     #Uncomment the following if you want to use LaTeX in figures
     rc('font',**{'family':'serif','serif':['Times']})
     rc('mathtext',fontset='cm')
@@ -32,7 +37,11 @@ if ifplot:
     matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"] 
     ioff()
     use('Agg')
-    import plots
+    from plots import xydy
+
+####################
+def lsine(x, A, B, Omega, x0):
+    return A+B*sin(Omega * (x-x0))
 
 ################################################################
 def readrange(infile, entries):
@@ -77,6 +86,7 @@ def curvestat(infile, nproc = 1, nentries = 1):
     res = pool.map(readrange_partial, entries)
 
     l = squeeze(asarray(list(res)))
+    print(shape(l))
     t = l[0,0,:] ; xsum = l[:,1,:].sum(axis=0) ; xsumsq = l[:,2,:].sum(axis=0)
     print((l[0,1,:]-l[1,1,:]).max())
     xmean = xsum / double(nentries)
@@ -85,12 +95,18 @@ def curvestat(infile, nproc = 1, nentries = 1):
     timeend = time.time()
     print("reading and calculations took "+str(timeend-timestart)+"s")
     
-    plots.xydy(t, xmean, xstd, outfile = 'curvestat')
+    xydy(t, xmean, xstd, outfile = 'curvestat')
 
 
 #######################################################################
 
-def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
+def viewcurve(infile, nentry, trange = None, ascout = False, stored = False,
+              taver = None, ttest = False):
+    '''
+    viewing and plotting a simulated light curve 
+    taver is the size of the window for time-average
+
+    '''
     if stored:
         lines = loadtxt(infile+hdf.entryname(nentry)+'.dat')
         t = lines[:,0] ; mdot = lines[:,1] ; L   = lines[:,3] ; M = lines[:,2] ; omega = lines[:,4]
@@ -98,24 +114,59 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
         t, datalist = hdf.read(infile, nentry)
         L, M, mdot, omega = datalist
         
+    omega *= r**1.5*tscale # omega to physical frequency
+
     if trange is not None:
         w = (t>trange[0]) & (t<trange[1])
         t=t[w] ; L=L[w] ; M=M[w] ; mdot=mdot[w] ; omega=omega[w]
     niter = shape(mdot)[0] ; nt = size(t)
+
+    if ttest:
+        dt = t[1:]-t[:-1]
+        print("t interval RMS "+str(dt.std()))
+        xydy(t[1:], dt, dt*0., outfile = 'ttest')
+        return 0.
+        
+    if taver is not None:
+        dtmean = (t.max()-t.min())/double(nt)
+        if dtmean >= taver:
+            print("taver doing nothing")
+        else:
+            tnew = arange(t.min(), t.max(), taver)
+            tc = (tnew[1:]+tnew[:-1])/2.
+            ntnew = size(tnew)-1
+            Lnew = zeros(ntnew) ; Mnew = zeros(ntnew) ; Onew = zeros(ntnew)
+            mdnew = zeros(ntnew)
+            dLnew = zeros(ntnew) ; dMnew = zeros(ntnew) ; dOnew = zeros(ntnew)
+            dmdnew = zeros(ntnew)
+            for k in arange(ntnew):
+                w = (t>tnew[k]) * (t<tnew[k+1])
+                Lnew[k] = L[w].mean() ; dLnew[k] = L[w].std()
+                Mnew[k] = M[w].mean() ; dMnew[k] = M[w].std()
+                Onew[k] = omega[w].mean() ; dOnew[k] = omega[w].std()
+                mdnew[k] = mdot[w].mean() ; dmdnew[k] = mdot[w].std()            
+                
     if ifplot:
         Ldisc = mdot/r/2.
-        oepi = 2.*omega * r**1.5*tscale * L # epicyclic frequency
+        oepi = omega * L # epicyclic frequency
         clf()
         # fig, ax = subplots(2,1)
         #   subplot(2,1,0)
-        fig = figure()
-        sc1 = scatter(L+Ldisc, 2.*pi*omega * r**1.5*tscale, c=t, s=1.)
+        cmap = cm.viridis
+        norm = Normalize(vmin=t.min(), vmax=t.max())
+        fig = figure()      
+        if taver is not None:
+            sc1 = scatter(Lnew, 2.*pi*Onew, c = cmap(norm(tc)), s=5.)
+            errorbar(Lnew, 2.*pi*Onew, xerr = dLnew, yerr = 2.*pi*dOnew, fmt = 'none',
+                     ecolor = cmap(norm(tc)))
+        else:
+            sc1 = scatter(L, 2.*pi*omega, c = cmap(norm(t)), s=1.)
         cbar1 = colorbar(sc1)
         cbar1.ax.tick_params(labelsize=14, length=3, width=1., which='major')
         cbar1.set_label(r'$t$, s', fontsize=18)
         ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
         xlabel(r'$L/L_{\rm Edd}$', fontsize = 20)
-        ylim(2.*pi*omega.min() * r**1.5*tscale, 2.*pi*omega.max() * r**1.5*tscale)
+        ylim(2.*pi*omega.min(), 2.*pi*omega.max())
         tick_params(labelsize=14, length=6, width=1., which='major')
         tick_params(labelsize=14, length=3, width=1., which='minor')
         fig.set_size_inches(5, 6)
@@ -156,6 +207,18 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False):
         savefig(infile+"_Opm.pdf")
         
         close("all")
+    if regime == 'sine':
+        cfit, ccov = curve_fit(lsine, t[:2000], mdot[:2000], sigma = mdot[:2000],
+                               p0 = [1., 0.05, 0.09, -5.8], ftol = 1e-15, xtol = 1e-15)
+        print(cfit)
+        mdot -= lsine(t, cfit[0], cfit[1], cfit[2], cfit[3])
+        clf()
+        plot(t, mdot, 'k-')
+        xlabel(r'$t$, s', fontsize = 20) ; ylabel(r'$\dot m$', fontsize = 20)
+        savefig(infile+"_msin.eps")
+        savefig(infile+"_msin.png")
+        savefig(infile+"_msin.pdf")
+        
     if ascout:
         fout = open(infile+hdf.entryname(nentry)+'.dat', 'w')
         #        fout.write('# parameters:')
