@@ -1,7 +1,6 @@
 from mslab import ifplot 
 if ifplot:
-    import matplotlib
-    from matplotlib import rc
+    import plots
 import numpy.random as random
 from numpy import *
 from numpy.fft import fft, ifft, fftfreq
@@ -26,7 +25,8 @@ def flickgen(tmax, dt, nslope = 2, ifplot = False, rseed = None):
     fwhite = rand(nx)
     freq = fftfreq(nx)
     df = (1.-freq.min()/freq.max())/double(size(freq))
-    freqfilter = abs(freq/freq.max() + df * 0.1j)**(-nslope/2.) * exp(1j * rand(nx)*2.*pi) 
+    freqfilter = exp(1j * rand(nx)*2.*pi - (nslope/4.) * (log(freq.real**2+freq.imag**2+0.01*df**2)- 2.*log(freq.max())))
+    # abs(freq/freq.max() + df * 0.01j)**(-nslope/2.) * exp(1j * rand(nx)*2.*pi) 
     #    freqfilter[isnan(freqfilter)] = 0.
     #    freqfilter[isinf(freqfilter)] = 0.
     # 
@@ -57,3 +57,21 @@ def randomsin(mdot, sinefreq, samp, rseed = None):
     sinedphi = rand()
     s = lambda x: mdot * (1. + samp * sin(sinefreq * double(x) + sinedphi))
     return s
+
+def noizetest():
+
+    nflick =2.
+    # t, x = flickgen(1., 1.e-5, nslope = nflick)
+
+    t=arange(10000)*0.01
+    xfun  = randomsin(1., 2.*pi*1., 0.05)
+    x=xfun(t)
+    
+    xf = fft(x)
+    freq = fftfreq(size(x))
+
+    pds = abs(xf)**2
+
+    w= (freq >0.)
+    
+    plots.xydy(freq[w], xf[w], xf[w]*0., outfile = 'noizetest', ylog = True, xlog = True)

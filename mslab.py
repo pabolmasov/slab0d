@@ -41,7 +41,7 @@ print("Omega +/- = "+str(omegaplus)+", "+str(omegaminus)+"\Omega_K \n")
 regimes = ['const', 'sine', 'flick', 'brown']
 regime = 'flick'
 
-nflick = 2.0
+nflick = 1.3
 tbreak = tdepl
 # accretion rate and amplitude:
 mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
@@ -49,7 +49,7 @@ dmdot =  .5 # relative variation dispersion
 # time grid
 maxtimescale = (tdepl+1./alpha)
 mintimescale = 1./(1./tdepl+alpha)
-dtout = 3e-2*mintimescale # this gives 10^5 data points
+dtout = 1e-2*mintimescale # this gives 10^5 data points
 tmax = 50.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
