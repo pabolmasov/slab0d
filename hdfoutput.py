@@ -2,7 +2,8 @@ import h5py
 import zarr
 from numpy import *
 
-from mslab import ifzarr
+# from mslab import ifzarr
+ifzarr =True
 
 '''
 inputs and outputs to HDF5 and zarr 

@@ -15,6 +15,8 @@ matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"]
 ioff()
 use('Agg')
 
+from multiple_formatter import *
+
 from mslab import mscale, tscale, omegaNS, r, pspin
 from mslab import alpha, tdepl, nflick
 
@@ -377,7 +379,8 @@ def object_pds(freq, objlist, outfile):
     for ko in arange(no):
         ebs[ko] = errorbar(freqc[w]+freqs[1]*0.2, (freqc*objlist[ko].av)[w], yerr = (freqc*objlist[ko].dbin)[w], fmt = 'none', color=colorsequence[ko])
         ebs[ko][-1][0].set_linestyle(':')
-        errorbar(freqc[w], (freqc*objlist[ko].av)[w], xerr = freqs[w], yerr = (freqc*objlist[ko].densemble/sqrt(double(objlist[ko].npoints-1)))[w], fmt = colorsequence[ko]+formatsequence[ko])
+        errorbar(freqc[w], (freqc*objlist[ko].av)[w], xerr = freqs[w], yerr = (freqc*objlist[ko].densemble)[w], fmt = colorsequence[ko]+formatsequence[ko])
+        # /sqrt(double(objlist[ko].npoints-1))
         minn = (freqc*objlist[ko].av)[w].min()
         if minn < minf:
             minf = minn
@@ -409,11 +412,16 @@ def object_coherence(freq, objlist, outfile):
     for ko in arange(no):
         ebs_c[ko] = ax[1].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].c[w], yerr = (freqc*objlist[ko].dc_bin)[w], fmt = 'none', color=colorsequence[ko])
         ebs_c[ko][-1][0].set_linestyle(':')
-        ax[1].errorbar(freqc[w], objlist[ko].c[w], xerr = freqs[w], yerr = (objlist[ko].dc_ensemble/sqrt(double(objlist[ko].npoints-1)))[w], fmt = colorsequence[ko]+'.')
+        ax[1].errorbar(freqc[w], objlist[ko].c[w], xerr = freqs[w], yerr = (objlist[ko].dc_ensemble)[w], fmt = colorsequence[ko]+'.')
+        # /sqrt(double(objlist[ko].npoints-1))
         ebs_p[ko] = ax[0].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].phlag[w], yerr = (objlist[ko].dphlag_bin)[w], fmt = 'none', color=colorsequence[ko])
         ebs_p[ko][-1][0].set_linestyle(':')
-        ax[0].errorbar(freqc[w], objlist[ko].phlag[w], xerr = freqs[w], yerr = (objlist[ko].dphlag_ensemble/sqrt(double(objlist[ko].npoints-1)))[w], fmt = colorsequence[ko]+'.')
+        ax[0].errorbar(freqc[w], objlist[ko].phlag[w], xerr = freqs[w], yerr = (objlist[ko].dphlag_ensemble)[w], fmt = colorsequence[ko]+'.')
         # /sqrt(double(objlist[ko].npoints-1))
+    ax[0].yaxis.set_major_locator(plt.MultipleLocator(np.pi / 2))
+    ax[0].yaxis.set_minor_locator(plt.MultipleLocator(np.pi / 6))
+    ax[0].yaxis.set_major_formatter(plt.FuncFormatter(multiple_formatter()))
+    
     ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [-pi,pi], 'g')
     ax[0].plot([r**(-1.5)*alpha/tscale,r**(-1.5)*alpha/tscale], [-pi,pi], 'g--')
     ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [-pi,pi], 'g-.')
@@ -436,11 +444,11 @@ def object_coherence(freq, objlist, outfile):
     ax[1].set_xscale('log') # ;   ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
     ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18) ; ax[0].set_ylim(-pi,pi)
-    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[0].tick_params(labelsize=16, length=6, width=1., which='major')
+    ax[0].tick_params(labelsize=16, length=2, width=1., which='minor')
     ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-    fig.set_size_inches(5, 6)
+    ax[1].tick_params(labelsize=14, length=2, width=1., which='minor')
+    fig.set_size_inches(5, 7)
     fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.eps')

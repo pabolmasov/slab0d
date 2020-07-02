@@ -1,6 +1,7 @@
 import numpy
 import numpy.fft
 from numpy import *
+from numpy.fft import *
 # from scipy import fftpack
 from scipy.interpolate import interp1d
 from functools import partial
@@ -13,7 +14,7 @@ if oldscipy:
 else:
     from scipy.optimize import root_scalar
 
-import hdfoutput as hdf
+from hdfoutput import keyshow, read
 from mslab import j, r, ifzarr, tscale, ifplot, tdepl, alpha, omegaNS
 
 import multiprocessing
@@ -95,8 +96,11 @@ class fourier:
         self.tilde[:] = 2.*rfft(lc1)
                                 #-self.mean))/lc.sum() # Miyamoto norm
         self.pds[:] = double(abs(self.tilde)**2)
-    def crossT(self, lcref_fft):
-        cross = conj(self.tilde) * lcref_fft
+    def crossT(self, lcref_fft, lc_fft = None):
+        if lc_fft is None:
+            cross = conj(self.tilde) * lcref_fft
+        else:
+            cross = conj(lc_fft) * lcref_fft
         self.cross = cross
         self.dcross = cross.real**2 + cross.imag**2 * 1j
     def addcrossT(self, lcref_fft, lc_fft):
@@ -142,7 +146,7 @@ class binobject:
         self.c = abs(self.av) / sqrt(pds1.av * pds2.av)
         self.dc_ensemble = (self.densemble.real * self.av.real + self.densemble.imag * self.av.imag) / abs(self.av) / sqrt(pds1.av*pds2.av) +\
                            self.c / 2. * (pds1.densemble / pds1.av + pds2.densemble / pds2.av)
-        self.dc_bin = (self.dbin.real * self.av.real + self.dbin.imag * self.av.imag) / abs(self.av) / sqrt(pds1.av*pds2.av) +\
+        self.dc_bin = (self.dbin.real * abs(self.av.real) + self.dbin.imag * abs(self.av.imag)) / abs(self.av) / sqrt(pds1.av*pds2.av) +\
                       self.c / 2. * (pds1.dbin / pds1.av + pds2.dbin / pds2.av)
         self.phlag = angle(self.av)
         t = tan(self.phlag)
@@ -204,7 +208,7 @@ def crossmerge(avlist):
     calculates the mean cross-spectrum (complex) and its uncertainties (stored as a complex value)
     '''
     nl = size(avlist)
-    nf = size(avlist[0].pds)
+    nf = size(avlist[0].cross)
     crosssum = zeros(nf, dtype = complex) ; crosssqsum = zeros(nf, dtype = complex)
     for k in arange(nl):
         crosssum += avlist[k].cross
@@ -222,6 +226,7 @@ def spread(infile, entries):
     entries is the list/array of the entries
     '''
     nl = size(entries)
+    print("spread: nl = "+str(nl))
     hfile = zarr.open(infile+".zarr", "r")
     glo=hfile["globals"]
     time=glo["time"][:]
@@ -245,13 +250,15 @@ def spread(infile, entries):
             msp.FT(M)  ;  msp.crossT(mdotsp.tilde)
             lsp.FT(L) ; lsp.crossT(mdotsp.tilde)
             osp.FT(omega) ; osp.crossT(mdotsp.tilde)
+            mdotsp.crossT(lsp.tilde, lc_fft = osp.tilde)  # mdotsp now also contains correlation between L and Omega!
         else:
             mdot_fft = mdotsp.addFT(mdot)
             m_fft = msp.addFT(M)  ;  msp.addcrossT(mdot_fft, m_fft)
             l_fft = lsp.addFT(L) ; lsp.addcrossT(mdot_fft, l_fft)
             o_fft = osp.addFT(omega) ; osp.addcrossT(mdot_fft, o_fft)
+            mdotsp.addcrossT(l_fft, o_fft) 
             # print('max f(mdot) = '+str(abs(mdot_fft).max()))
-    mdotsp.normalize(nl, ifcross = False) ; msp.normalize(nl) ; lsp.normalize(nl) ; osp.normalize(nl)    
+    mdotsp.normalize(nl) ; msp.normalize(nl) ; lsp.normalize(nl) ; osp.normalize(nl)    
     
     return mdotsp, msp, lsp, osp
 
@@ -273,12 +280,14 @@ def to_fft(lclist):
             msp.FT(M)  ;  msp.crossT(mdotsp.tilde)
             lsp.FT(L) ; lsp.crossT(mdotsp.tilde)
             osp.FT(omega) ; osp.crossT(mdotsp.tilde)
+            mdotsp.crossT(lsp.tilde,  lc_fft = osp.tilde)  # mdotsp now also contains correlation between L and Omega!
         else:
             mdot_fft = mdotsp.addFT(mdot)
             m_fft = msp.addFT(M)  ;  msp.addcrossT(mdot_fft, m_fft)
             l_fft = lsp.addFT(L) ; lsp.addcrossT(mdot_fft, l_fft)
             o_fft = osp.addFT(omega) ; osp.addcrossT(mdot_fft, o_fft)
-    mdotsp.normalize(nl, ifcross = False) ; msp.normalize(nl) ; lsp.normalize(nl) ; osp.normalize(nl)    
+            mdotsp.addcrossT(l_fft, o_fft) 
+    mdotsp.normalize(nl) ; msp.normalize(nl) ; lsp.normalize(nl) ; osp.normalize(nl)    
     
     return mdotsp, msp, lsp, osp
 
@@ -288,7 +297,7 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     '''
     t1 = time.time()
     if rawdata is None:
-        keys = hdf.keyshow(infile)
+        keys = keyshow(infile)
         nsims = size(keys)-1 # one key points to globals
         if simlimit is not None:
             nsims = minimum(nsims, simlimit)
@@ -319,6 +328,7 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
         m_pds, dm_pds = pdsmerge(msps_av)
         o_pds, do_pds = pdsmerge(osps_av)
         l_pds, dl_pds = pdsmerge(lsps_av)
+        ol_c, dol_c = crossmerge(mdotsps_av)
         m_c, dm_c = crossmerge(msps_av)
         o_c, do_c = crossmerge(osps_av)
         l_c, dl_c = crossmerge(lsps_av)
@@ -334,6 +344,7 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
         m_c = msps_av.cross ; dm_c = msps_av.dcross
         o_c = osps_av.cross ; do_c = osps_av.dcross        
         l_c = lsps_av.cross ; dl_c = lsps_av.dcross
+        ol_c = mdotsps_av.cross ; dol_c = mdotsps_av.dcross
         freq = mdotsps_av.freq
         nf = size(freq)
         t2 = time.time()
@@ -342,7 +353,8 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     # from dispersions to mean uncertainties
     dmdot_pds /= sqrt(double(nsims-1)) ;   dm_pds /= sqrt(double(nsims-1))
     do_pds /= sqrt(double(nsims-1)) ;   dl_pds /= sqrt(double(nsims-1))
-    dm_c /= sqrt(double(nsims-1)) ;   dl_c /= sqrt(double(nsims-1)) ;   do_c /= sqrt(double(nsims-1))
+    dm_c /= sqrt(double(nsims-1)) ;   dl_c /= sqrt(double(nsims-1))
+    do_c /= sqrt(double(nsims-1)) ;   dol_c /= sqrt(double(nsims-1))
     
     if ifplot: 
         clf()
@@ -360,7 +372,7 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     nbins = binning
     npoints = zeros(nbins, dtype = integer)
     mdot_pds_bin = binobject()  ; m_pds_bin = binobject() ; l_pds_bin = binobject()  ;  o_pds_bin = binobject()
-    mdot_cross_bin = binobject()  ; m_cross_bin = binobject() ; l_cross_bin = binobject()  ;  o_cross_bin = binobject()
+    ol_cross_bin = binobject()  ; m_cross_bin = binobject() ; l_cross_bin = binobject()  ;  o_cross_bin = binobject()
     freq1 = freq[freq>0.].min() ; freq2 = freq.max()
     kfactor = 5
     x = arange(nbins+1)/double(nbins)
@@ -374,23 +386,26 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     m_cross_bin.interpolmake(freq, freqbin, m_c, dm_c)
     l_cross_bin.interpolmake(freq, freqbin, l_c, dl_c)
     o_cross_bin.interpolmake(freq, freqbin, o_c, do_c)
+    ol_cross_bin.interpolmake(freq, freqbin, ol_c, dol_c)
     m_cross_bin.comake(mdot_pds_bin, m_pds_bin) # calculate coherence and phase lags
     l_cross_bin.comake(mdot_pds_bin, l_pds_bin)
     o_cross_bin.comake(mdot_pds_bin, o_pds_bin)
+    ol_cross_bin.comake(l_pds_bin, o_pds_bin)
     t5 = time.time()
     asc_pdsout(freqbin, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
-    asc_coherence(freqbin, [m_cross_bin, l_cross_bin, o_cross_bin], infile+'_cross')
+    asc_coherence(freqbin, [m_cross_bin, l_cross_bin, o_cross_bin, ol_cross_bin], infile+'_cross')
     if ifplot:
         plots.object_pds(freqbin, [mdot_pds_bin, m_pds_bin, l_pds_bin, o_pds_bin], infile+'_pds')
         plots.object_coherence(freqbin, [m_cross_bin], infile+'_mcoherence')
         plots.object_coherence(freqbin, [l_cross_bin], infile+'_lcoherence')
         plots.object_coherence(freqbin, [o_cross_bin], infile+'_ocoherence')
+        plots.object_coherence(freqbin, [ol_cross_bin], infile+'_olcoherence')
     t6 = time.time()
     print("binning "+str(t5-t4)+"s")
     print("outputs "+str(t6-t5)+"s")
     print("total time "+str(t6-t1)+"s")
 
-def object_pds_stored(infile, nvar = 0):
+def object_pds_stored(infile, nvar = 0, highignore = None):
     lines = np.loadtxt(infile+".dat")
     f1 = lines[:,0] ; f2 = lines[:,1] ; npoints=lines[:, -1]
     nf = size(f1)
@@ -398,10 +413,15 @@ def object_pds_stored(infile, nvar = 0):
     freq[:-1] = f1[:] ; freq[-1] = f2[-1]
     q = lines[:, nvar*3+2] ; dq_ensemble = lines[:, nvar*3+3] ; dq_bin = lines[:, nvar*3+4]
     qobj = binobject()
-    qobj.av = q ; qobj.densemble = dq_ensemble ; qobj.dbin = dq_bin ; qobj.npoints = npoints
+    if highignore is None:
+        qobj.av = q ; qobj.densemble = dq_ensemble ; qobj.dbin = dq_bin ; qobj.npoints = npoints
+    else:
+        w = where(f2 < (freq.max()*highignore))
+        qobj.av = q[w] ; qobj.densemble = dq_ensemble[w] ; qobj.dbin = dq_bin[w] ; qobj.npoints = npoints[w]
+        freq = freq[freq  < (freq.max()*highignore)]
     plots.object_pds(freq, [qobj], infile)
-   
-def object_coherence_stored(infile, nvar = 0):
+        
+def object_coherence_stored(infile, nvar = 0, highignore = None):
     lines = np.loadtxt(infile+".dat")
     f1 = lines[:,0] ; f2 = lines[:,1] ; npoints=lines[:, -1]
     nf = size(f1)
@@ -410,8 +430,14 @@ def object_coherence_stored(infile, nvar = 0):
     c = lines[:, nvar*6+2] ; dc_ensemble = lines[:, nvar*6+3] ; dc_bin = lines[:, nvar*6+4]
     phlag  = lines[:, nvar*6+5] ; dphlag_ensemble = lines[:, nvar*6+6] ; dphlag_bin = lines[:, nvar*6+7]
     qobj = binobject()
-    qobj.c = c ; qobj.dc_ensemble = dc_ensemble ; qobj.dc_bin = dc_bin ; qobj.npoints = npoints
-    qobj.phlag = phlag ; qobj.dphlag_ensemble = dphlag_ensemble ; qobj.dphlag_bin = dphlag_bin
+    if highignore is None:
+        qobj.c = c ; qobj.dc_ensemble = dc_ensemble ; qobj.dc_bin = dc_bin ; qobj.npoints = npoints
+        qobj.phlag = phlag ; qobj.dphlag_ensemble = dphlag_ensemble ; qobj.dphlag_bin = dphlag_bin
+    else:
+        w = where(f2 < (freq.max()*highignore))
+        qobj.c = c[w] ; qobj.dc_ensemble = dc_ensemble[w] ; qobj.dc_bin = dc_bin[w] ; qobj.npoints = npoints[w]
+        qobj.phlag = phlag[w] ; qobj.dphlag_ensemble = dphlag_ensemble[w] ; qobj.dphlag_bin = dphlag_bin[w]
+        freq = freq[freq  < (freq.max()*highignore)]
     plots.object_coherence(freq, [qobj], infile)
     
 ################################################################################################
@@ -425,7 +451,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
     simfilter = [N1, N2]  sets the number range of the files used in the simulation
     cotest (boolean) is used to test the correct work of the covariance analysis
     '''
-    keys = hdf.keyshow(infile)
+    keys = keyshow(infile)
     nsims = size(keys)-1 # one key points to globals
 
     time1 = time.time()
@@ -435,7 +461,7 @@ def spec_sequential(infile = 'slabout', trange = [0.1, 1e10],
         nsims  = size(keys)-1
     
     for k in arange(nsims):
-        t, datalist = hdf.read(infile, 0, entry = keys[k])
+        t, datalist = read(infile, 0, entry = keys[k])
         L, M, mdot, orot = datalist
         if trange is not None:
             w = (t>trange[0]) * (t<trange[1])
