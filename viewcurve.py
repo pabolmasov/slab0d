@@ -101,7 +101,7 @@ def curvestat(infile, nproc = 1, nentries = 1):
 #######################################################################
 
 def viewcurve(infile, nentry, trange = None, ascout = False, stored = False,
-              taver = None, ttest = False):
+              taver = None, ttest = False, cb = True):
     '''
     viewing and plotting a simulated light curve 
     taver is the size of the window for time-average
@@ -156,20 +156,27 @@ def viewcurve(infile, nentry, trange = None, ascout = False, stored = False,
         norm = Normalize(vmin=t.min(), vmax=t.max())
         fig = figure()      
         if taver is not None:
-            sc1 = scatter(Lnew, 2.*pi*Onew, c = cmap(norm(tc)), s=5.)
+            sc1 = scatter(Lnew, 2.*pi*Onew, c = tc, s=5.)
             errorbar(Lnew, 2.*pi*Onew, xerr = dLnew, yerr = 2.*pi*dOnew, fmt = 'none',
                      ecolor = cmap(norm(tc)))
         else:
-            sc1 = scatter(L, 2.*pi*omega, c = cmap(norm(t)), s=1.)
-        cbar1 = colorbar(sc1)
-        cbar1.ax.tick_params(labelsize=14, length=3, width=1., which='major')
-        cbar1.set_label(r'$t$, s', fontsize=18)
+            sc1 = scatter(L, 2.*pi*omega, c = t, s=1.)
+            #   cc = scatter(-L, 2.*pi*omega, c = t, s=1.)
+        if cb:
+            cbar1 = fig.colorbar(sc1)
+            cbar1.ax.tick_params(labelsize=12, length=3, width=1., which='major')
+            cbar1.set_label(r'$t$, s', fontsize=14)
         ylabel(r'$\Omega/\Omega_{\rm K}$', fontsize = 20)
         xlabel(r'$L/L_{\rm Edd}$', fontsize = 20)
         ylim(2.*pi*omega.min(), 2.*pi*omega.max())
+        #     xscale('log')
+        #  xlim(L.min(), L.max())
         tick_params(labelsize=14, length=6, width=1., which='major')
         tick_params(labelsize=14, length=3, width=1., which='minor')
-        fig.set_size_inches(5, 6)
+        if cb:
+            fig.set_size_inches(5, 6)
+        else:
+            fig.set_size_inches(4, 6)
         fig.tight_layout()
         savefig(infile+"_O.pdf")
         savefig(infile+"_O.png")

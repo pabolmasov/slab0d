@@ -2,6 +2,7 @@ from numpy import *
 from scipy.integrate import *
 from scipy.interpolate import interp1d
 from scipy.signal import *
+from numpy.random import rand, seed
 
 # for normal distribution fit:
 # import matplotlib.mlab as mlab
@@ -20,8 +21,8 @@ from multiprocessing import Pool
 
 mNS = 1.5 # NS mass in Solar units
 r = 6./(mNS/1.5) # NS radius in GM/c**2 units
-alpha = 1e-6
-tdepl = 1.e7 # r**1.5/alpha/2. # depletion time in GM/c^3 units
+alpha = 1.e-7
+tdepl = 1.e8 # r**1.5/alpha/2. # depletion time in GM/c^3 units
 j = .9999*sqrt(r)
 pspin = 0.003 # spin period, s
 tscale = 4.92594e-06 * mNS # time scale, s
@@ -30,8 +31,7 @@ omegaNS = 2.*pi/pspin * tscale
 dtdyn = r**1.5
 
 atd = alpha * tdepl / r**1.5 
-print("q = "+str(r**2/alpha/tdepl/j))
-print("atd = "+str(atd))
+print("q = "+str(atd))
 omegaplus = 1./2./atd + sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
 omegaminus = 1./2./atd - sqrt((1./2./atd-1.)**2 + (1.-j/sqrt(r))/atd)
 print("Omega +/- = "+str(omegaplus)+", "+str(omegaminus)+"\Omega_K \n")
@@ -50,11 +50,11 @@ dmdot =  .5 # relative variation dispersion
 maxtimescale = (tdepl+1./alpha)
 mintimescale = 1./(1./tdepl+alpha)
 dtout = 1e-2*mintimescale # this gives 10^5 data points
-tmax = 50.*maxtimescale
+tmax = 100.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
 print("alpha = "+str(alpha))
-print("tdepl = "+str(tdepl))
+print("tdepl = "+str(tdepl*tscale)+"s")
 tar = dtout * arange(nt)
 
 sinefreq = 2.*pi * 0.1 / mintimescale  # frequency of the sinusoudal variation
@@ -234,6 +234,8 @@ def tvar(nrepeat = 30):
     global hname
     global tmax
 
+    seed(seed=100)
+
     hname = 'tvar'
 
     tmax = maximum(tmax, 1000.)
@@ -256,7 +258,10 @@ def tvar(nrepeat = 30):
         fout.write(str(alpha*tdepl/dtdyn)+" "+str(omar[k]*r**1.5)+" "+str(ostar[k]*r**1.5)+" "+str(oeq[k] * r**1.5)+"\n")
     fout.close()
     
-    plots.xydy(alpha*tdar/dtdyn, omar*r**1.5, ostar*r**1.5, xlog = (td2/td1) > 5., addlines = [oeq * r**1.5, oeq*0.+omegaNS*r**1.5],
-               xl = r'$\alpha \Omega_{\rm K} t_{\rm depl}$', yl = r'$\Omega/\Omega_{\rm K}$', outfile = 'tvar')
+    plots.xydy(alpha*tdar/dtdyn, omar*r**1.5, ostar*r**1.5,
+               xlog = (td2/td1) > 5.,
+               addlines = [oeq * r**1.5, oeq*0.+omegaNS*r**1.5],
+               xl = r'$q$', yl = r'$\Omega/\Omega_{\rm K}$', outfile = 'tvar')
+    # \alpha \Omega_{\rm K} t_{\rm depl} 
     
     

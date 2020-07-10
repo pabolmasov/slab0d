@@ -150,10 +150,10 @@ class binobject:
                       self.c / 2. * (pds1.dbin / pds1.av + pds2.dbin / pds2.av)
         self.phlag = angle(self.av)
         t = tan(self.phlag)
-        self.dphlag_ensemble = sqrt((self.densemble.real/self.av.real)**2 +
-                                   (self.densemble.imag/self.av.imag)**2)/(t+1./t)
-        self.dphlag_bin = sqrt((self.dbin.real/self.av.real)**2 +
-                                   (self.dbin.imag/self.av.imag)**2)/(t+1./t)
+        self.dphlag_ensemble = (abs(self.densemble.real/self.av.real) +
+                                abs(self.densemble.imag/self.av.imag))/(t+1./t)
+        self.dphlag_bin = (abs(self.dbin.real/self.av.real) +
+                           abs(self.dbin.imag/self.av.imag))/(t+1./t)
 
 def asc_pdsout(freq, pdsobjects, outfile):
     '''
@@ -243,6 +243,8 @@ def spread(infile, entries):
             vals = data.keys()
             print(vals)
         L = data['L'][:] ; M = data['M'][:]  ; mdot = data['mdot'][:] ; omega = data['omega'][:]
+
+        #       mdot = log(mdot) ; L = log(L) # !!! temporary!!1
         #        if alias > 1:
         #            L = L[::alias] ; M = M[::alias] ; mdot = mdot[::alias] ; omega = omega[::alias]
         if k == 0:

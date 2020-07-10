@@ -56,7 +56,7 @@ def xydy(x, y, dy, xl = None, yl = None, outfile = 'xydy', xlog = False, ylog = 
         yscale('log')
     tick_params(labelsize=14, length=6, width=1., which='major')
     tick_params(labelsize=14, length=3, width=1., which='minor')
-    fig.set_size_inches(10, 4)
+    fig.set_size_inches(12, 5)
     fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.pdf')
@@ -410,7 +410,8 @@ def object_coherence(freq, objlist, outfile):
     # plot(freq, mdot_pds, 'k,')
     # plot(freq, lBL_pds, 'r,')
     for ko in arange(no):
-        ebs_c[ko] = ax[1].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].c[w], yerr = (freqc*objlist[ko].dc_bin)[w], fmt = 'none', color=colorsequence[ko])
+        print("mean phi = "+str(objlist[ko].phlag.mean())+"+/-"+str(objlist[ko].dphlag_bin.mean())+"+/-"+str(objlist[ko].dphlag_ensemble.mean()))
+        ebs_c[ko] = ax[1].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].c[w], yerr = (objlist[ko].dc_bin)[w], fmt = 'none', color=colorsequence[ko])
         ebs_c[ko][-1][0].set_linestyle(':')
         ax[1].errorbar(freqc[w], objlist[ko].c[w], xerr = freqs[w], yerr = (objlist[ko].dc_ensemble)[w], fmt = colorsequence[ko]+'.')
         # /sqrt(double(objlist[ko].npoints-1))
