@@ -45,11 +45,11 @@ nflick = 1.3
 tbreak = tdepl
 # accretion rate and amplitude:
 mdot = 1. * 4.*pi # mean mass accretion rate, GM/kappa c units
-dmdot =  .5 # relative variation dispersion
+dmdot =  0.5 # relative variation dispersion
 # time grid
 maxtimescale = (tdepl+1./alpha)
 mintimescale = 1./(1./tdepl+alpha)
-dtout = 1e-2*mintimescale # this gives 10^5 data points
+dtout = 3e-2*mintimescale # this gives 10^5 data points
 tmax = 100.*maxtimescale
 nt = int(ceil(tmax/dtout))
 print(str(nt)+" points in time")
@@ -85,7 +85,7 @@ def onestep(m, l, mdot):
     dm = mdot - m/tdepl
     # alpha * geff * m**2/l * (omega > omegaNS)
     #    a = alpha * m * r / omega * (omega-omegaNS)**2
-    lout = alpha * r * geff * (omega - omegaNS) *m  + 1./tdepl * (omega**2-omegaNS**2) * r**2 /2. * m + mdot * ((j/r)**2 - (omega*r)**2 ) / 2.
+    lout = alpha * r * geff * (omega - omegaNS) * m / 2.  + 1./tdepl * (omega**2-omegaNS**2) * r**2 /2. * m + mdot * ((j/r)**2 - (omega*r)**2 ) / 2.
     a = lout / geff
     cth = a/(4.*pi*r**2)
     
@@ -98,7 +98,7 @@ def onestep(m, l, mdot):
     #    print(omegaNS)
     return dm, dl, lout, cth
 
-def singlerun(krepeat, ooutput = False):
+def singlerun(krepeat, ooutput = False, epicyclic = False):
     '''
     evolution of a layer spun up by a variable mass accretion rate. 
     If nflick is set, it is the power-law index of the noize spectrum
@@ -179,6 +179,8 @@ def singlerun(krepeat, ooutput = False):
             mreal = (tstore - t) * dm + m
             lreal = (tstore - t) * dl + l
             orot = lreal / mreal /r**2/tscale / 2. /pi
+            if epicyclic:
+                orot *= cth *2.
             loutreal = (lout-lout1) * ((t-dt) - tstore) * 2. / dt + lout
             if ifasc:
                 fout.write(str(tstore*tscale)+" "+str(mdotreal/4./pi)+" "+str(mreal)+" "+str(loutreal/ (4.*pi))+" "+str(orot)+"\n")
@@ -225,7 +227,7 @@ def slab_evolution(nrepeat = 1, nproc = 1, somega = None):
         if not ifzarr:
             hfile.close()
             
-def tvar(nrepeat = 30):
+def tvar(nrepeat = 30, epicyclic = False):
     '''
     special regime with variable tdepl
     '''
@@ -234,7 +236,7 @@ def tvar(nrepeat = 30):
     global hname
     global tmax
 
-    seed(seed=100)
+    seed()
 
     hname = 'tvar'
 
@@ -252,7 +254,7 @@ def tvar(nrepeat = 30):
     fout = open('tvar.dat', 'w')
     for k in arange(nd):
         tdepl = tdar[k]
-        omean, ostd, ooeq = singlerun(k, ooutput = True)
+        omean, ostd, ooeq = singlerun(k, ooutput = True, epicyclic = epicyclic)
         omar[k] = omean * (2.*pi*tscale) ; ostar[k] = ostd * (2.*pi*tscale) ; oeq[k] = ooeq
         print(str(alpha*tdepl)+" "+str(omean)+" "+str(ostd)+"\n")
         fout.write(str(alpha*tdepl/dtdyn)+" "+str(omar[k]*r**1.5)+" "+str(ostar[k]*r**1.5)+" "+str(oeq[k] * r**1.5)+"\n")

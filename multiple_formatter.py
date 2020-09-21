@@ -1,7 +1,15 @@
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 
 # solution found in the web: https://stackoverflow.com/questions/40642061/how-to-set-axis-ticks-in-multiples-of-pi-python-matplotlib
+
+plt.rc('font',**{'family':'serif','serif':['Times']})
+plt.rc('mathtext',fontset='cm')
+plt.rc('mathtext',rm='stix')
+plt.rc('text', usetex=True)
+# #add amsmath to the preamble
+matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath,upgreek}"] 
 
 def multiple_formatter(denominator=2, number=np.pi, latex='\pi'):
     def gcd(a, b):
@@ -26,7 +34,7 @@ def multiple_formatter(denominator=2, number=np.pi, latex='\pi'):
             if num==1:
                 return r'$\frac{%s}{%s}$'%(latex,den)
             elif num==-1:
-                return r'$\frac{-%s}{%s}$'%(latex,den)
+                return r'$-\frac{%s}{%s}$'%(latex,den)
             else:
                 return r'$\frac{%s%s}{%s}$'%(num,latex,den)
     return _multiple_formatter

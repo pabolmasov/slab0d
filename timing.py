@@ -144,10 +144,10 @@ class binobject:
         # makes coherence and phase lags out of a cross-spectrum
         #        print(sqrt(double(pds1.av)))
         self.c = abs(self.av) / sqrt(pds1.av * pds2.av)
-        self.dc_ensemble = (self.densemble.real * self.av.real + self.densemble.imag * self.av.imag) / abs(self.av) / sqrt(pds1.av*pds2.av) +\
-                           self.c / 2. * (pds1.densemble / pds1.av + pds2.densemble / pds2.av)
+        self.dc_ensemble = (self.densemble.real * abs(self.av.real) + self.densemble.imag * abs(self.av.imag)) / abs(self.av) / sqrt(pds1.av*pds2.av) +\
+                           self.c / 2. * (pds1.densemble / pds1.av + pds2.densemble / pds2.av) 
         self.dc_bin = (self.dbin.real * abs(self.av.real) + self.dbin.imag * abs(self.av.imag)) / abs(self.av) / sqrt(pds1.av*pds2.av) +\
-                      self.c / 2. * (pds1.dbin / pds1.av + pds2.dbin / pds2.av)
+                      self.c / 2. * (pds1.dbin / pds1.av + pds2.dbin / pds2.av)  
         self.phlag = angle(self.av)
         t = tan(self.phlag)
         self.dphlag_ensemble = (abs(self.densemble.real/self.av.real) +
@@ -243,7 +243,8 @@ def spread(infile, entries):
             vals = data.keys()
             print(vals)
         L = data['L'][:] ; M = data['M'][:]  ; mdot = data['mdot'][:] ; omega = data['omega'][:]
-
+        if epicyclic:
+            omega = 2.* omega * (1.+0.1*sqrt(copy(L)))
         #       mdot = log(mdot) ; L = log(L) # !!! temporary!!1
         #        if alias > 1:
         #            L = L[::alias] ; M = M[::alias] ; mdot = mdot[::alias] ; omega = omega[::alias]
@@ -293,10 +294,13 @@ def to_fft(lclist):
     
     return mdotsp, msp, lsp, osp
 
-def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100, rawdata = None):
+def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 100, rawdata = None, ifepicyclic = False, kfactor = 4):
     '''
     reads from a zarr file light curves in parallel, calculates and merges PDS and cross-spectra
     '''
+    global epicyclic
+    epicyclic = ifepicyclic # if we want omega to be replaced by omega * L
+    
     t1 = time.time()
     if rawdata is None:
         keys = keyshow(infile)
@@ -361,9 +365,9 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     if ifplot: 
         clf()
         errorbar(freq, mdot_pds*freq, yerr = dmdot_pds*freq)
-        errorbar(freq, m_pds*freq, yerr = dm_pds)
+        errorbar(freq, m_pds*freq, yerr = dm_pds*freq)
         plot(freq, mdot_pds*freq, 'k.')
-        plot([median(freq), median(freq)],  [(mdot_pds*freq).min(), (mdot_pds*freq).max()], 'r-')
+        #        plot([median(freq), median(freq)],  [(mdot_pds*freq).min(), (mdot_pds*freq).max()], 'r-')
         xscale('log') ;
         yscale('log') ; xlim(freq[freq>0.].min(), freq.max())
         savefig('pdstest.png')
@@ -376,7 +380,6 @@ def spec_parallel(infile, nproc = 2, trange = None, simlimit = None, binning = 1
     mdot_pds_bin = binobject()  ; m_pds_bin = binobject() ; l_pds_bin = binobject()  ;  o_pds_bin = binobject()
     ol_cross_bin = binobject()  ; m_cross_bin = binobject() ; l_cross_bin = binobject()  ;  o_cross_bin = binobject()
     freq1 = freq[freq>0.].min() ; freq2 = freq.max()
-    kfactor = 5
     x = arange(nbins+1)/double(nbins)
     freqbin = logABC(x, [freq1, freq2], kfactor * double(nbins)/ double(nf)) # quasi-exponential grid
     freqbin[0] = 0.
@@ -421,6 +424,7 @@ def object_pds_stored(infile, nvar = 0, highignore = None):
         w = where(f2 < (freq.max()*highignore))
         qobj.av = q[w] ; qobj.densemble = dq_ensemble[w] ; qobj.dbin = dq_bin[w] ; qobj.npoints = npoints[w]
         freq = freq[freq  < (freq.max()*highignore)]
+    qobj.dbin /= sqrt(qobj.npoints-1.)
     plots.object_pds(freq, [qobj], infile)
         
 def object_coherence_stored(infile, nvar = 0, highignore = None):
@@ -440,6 +444,8 @@ def object_coherence_stored(infile, nvar = 0, highignore = None):
         qobj.c = c[w] ; qobj.dc_ensemble = dc_ensemble[w] ; qobj.dc_bin = dc_bin[w] ; qobj.npoints = npoints[w]
         qobj.phlag = phlag[w] ; qobj.dphlag_ensemble = dphlag_ensemble[w] ; qobj.dphlag_bin = dphlag_bin[w]
         freq = freq[freq  < (freq.max()*highignore)]
+    qobj.dc_bin /= sqrt(qobj.npoints-1.)
+    qobj.dphlag_bin /= sqrt(qobj.npoints-1.)
     plots.object_coherence(freq, [qobj], infile)
     
 ################################################################################################
