@@ -15,22 +15,69 @@ matplotlib.rcParams['text.latex.preamble']=[r"\usepackage{amssymb,amsmath}"]
 ioff()
 use('Agg')
 
-from mslab import mscale, tscale, omegaNS, r
-from mslab import alpha, tdepl
+from multiple_formatter import *
 
+from mslab import mscale, tscale, omegaNS, r, pspin
+from mslab import alpha, tdepl, nflick
+
+linestyles = ['-', '--', ':', '-.', '--.']
+
+colorsequence = ['k', 'r', 'g', 'b', 'm']
+
+formatsequence = ['o', 'x', '+', 's']
+
+###########################################################################
+def xydyfile(infile):
+    lines = loadtxt(infile+'.dat')
+    x = lines[:,0] ; y = lines[:,1] ; dy = lines[:,2] ; z = lines[:,3]
+    xydy(x, y, dy, outfile = infile+'_xydy', addlines=[z])
+
+def xydy(x, y, dy, xl = None, yl = None, outfile = 'xydy', xlog = False, ylog = False, addlines = None):
+    '''
+    general plotter for quantity y as a function of x. dy is shown as errorbars for y. 
+    '''
+    clf()
+    fig = figure()
+    if addlines is not None:
+        # addlines should be a list
+        nlines = shape(addlines)[0]
+        for k in arange(nlines):
+            plot(x, addlines[k], 'r', linestyle = linestyles[k])
+    plot(x, y, 'ko')
+    eb = errorbar(x, y, yerr = dy, fmt = 'none')
+    eb[-1][0].set_linestyle('-')
+    if xl is not None:
+        xlabel(xl, fontsize = 18)
+    if yl is not None:
+        ylabel(yl, fontsize = 18)
+    if xlog:
+        xscale('log')
+    if ylog:
+        yscale('log')
+    tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
+    fig.set_size_inches(12, 5)
+    fig.tight_layout()
+    savefig(outfile+'.png')
+    savefig(outfile+'.eps')
+    savefig(outfile+'.pdf')
+    close()
+        
 #################################################################################
 # for mslab:
 def mconsttests(tar, mar, orot, meq, oeq):
     # mass and momentum test
+    print("Meq = "+str(meq))
     clf()
     fig, ax = subplots(2,1)
     ax[0].plot(tar, mar*0. + meq*mscale/1e17 , 'r-')
     ax[0].plot(tar, mar/1e17, 'k-')
     #            ax[0].set_xlabel(r'$t$, s', fontsize=18)
     ax[0].set_ylabel(r'$M$, $10^{17}$g', fontsize=18)
-    ax[1].plot(tar, orot*0. + oeq/tscale/2./pi, 'r-')
+    if oeq>0.:
+        ax[1].plot(tar, orot*0. + oeq/tscale/2./pi, 'r-')
     ax[1].plot(tar, orot, 'k-')
-    ax[1].plot(tar, orot*0. + omegaNS/tscale/2./pi, 'b:')
+    ax[1].plot(tar, orot*0. + 1./pspin, 'b:')
     ax[1].plot(tar, orot*0. + r**(-1.5)/tscale/2./pi, 'b:')
     ax[1].set_xlabel(r'$t$, s', fontsize=18)
     ax[1].set_ylabel(r'$f$, Hz', fontsize=18)
@@ -38,10 +85,10 @@ def mconsttests(tar, mar, orot, meq, oeq):
     ax[1].set_xscale('log')
     #            ax[0].set_xlim(0., efftimescale * 50.)
     #            ax[1].set_xlim(0., efftimescale * 50.)
-    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
-    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
     fig.set_size_inches(5, 6)
     fig.tight_layout()
     savefig('motest.png')
@@ -65,8 +112,8 @@ def generalcurve(tar, mdot, mar, orot, cthar, loutar, ldisc):
     plot(tar, orot*0. + mdot/4./pi/r, 'r-')
     plot(tar, orot*0. + mdot/8./pi/r, 'r:')
     xlabel(r'$t$, s', fontsize=18) ; ylabel(r'$L/L_{\rm Edd}$', fontsize=18)
-    tick_params(labelsize=14, length=6, width=1., which='major')
-    tick_params(labelsize=14, length=4, width=1., which='minor')
+    tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    tick_params(labelsize=14, length=4, width=1., which='minor', direction ='in')
     ylim([(loutar+ldisc).min()*0.5, (loutar+ldisc).max()*2.])
     yscale('log')
     fig.set_size_inches(8, 4)
@@ -91,8 +138,8 @@ def generalcurve(tar, mdot, mar, orot, cthar, loutar, ldisc):
     xlabel(r'$L/L_{\rm Edd}$', fontsize=18) ; ylabel(r'$f$, Hz', fontsize=18)
     xscale('log') # ; yscale('log')
     ylim([(orot*cthar).min()*0.9, (orot).max()*1.1])
-    tick_params(labelsize=14, length=6, width=1., which='major')
-    tick_params(labelsize=14, length=4, width=1., which='minor')
+    tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    tick_params(labelsize=14, length=4, width=1., which='minor', direction ='in')
     fig.set_size_inches(5, 6)
     fig.tight_layout()
     savefig('lfreq.png')
@@ -122,26 +169,40 @@ def pds(binfreq, mdot_pdsbin, mdot_dpdsbin, mdot_dpdsbin1, lBL_pdsbin, lBL_dpdsb
     xlim([binfreqc.min()/2., binfreq.max()])
     xscale('log') ; yscale('log')
     xlabel(r'$f$, Hz') ; ylabel(r'$f \, PDS$')
-    tick_params(labelsize=14, length=6, width=1., which='major')
-    tick_params(labelsize=14, length=4, width=1., which='minor')
+    tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    tick_params(labelsize=14, length=4, width=1., which='minor', direction ='in')
     fig.set_size_inches(5, 6)
     fig.tight_layout()
     savefig(outfile + '.png')
     savefig(outfile + '.eps')
     close()
 
-def pds_doubled(freq1, freq2, mdot_pdsbin, mdot_dpdsbin1,  mdot_dpdsbin2, lBL_pdsbin, lBL_dpdsbin1, lBL_dpdsbin2, npoints, outfile):
-    # for a double error source,  ensemble variations and variability within the frequency bin
-    freqc = (freq1+freq2)/2.
-    freqs = (freq2-freq1)/2.    
+def multipds_stored(prefix):
+    lines1 = loadtxt(prefix+'_osp.dat', comments='#')
+    #     f1, f2, mdot, dmdot, d1mdot, y, dy, dy1, c, dc, dc1, p, dp, dp1, np
+    f1_1 = lines1[:,0] ; f1_2 = lines1[:,1]
+    mpds = lines1[:,2] ; dmpds = lines1[:,3]+lines1[:,4]
+    opds = lines1[:,5] ; dopds = lines1[:,6]+lines1[:,7]
+    lines2 = loadtxt(prefix+'_lsp.dat', comments='#')
+    f2_1 = lines2[:,0] ; f2_2 = lines2[:,1]
+    lpds = lines2[:,5] ; dlpds = lines2[:,6]+lines2[:,7]
+    multipds([f1_1, f2_1, f1_1], [f1_2, f2_2, f1_2], [mpds, lpds, opds], [dmpds, dlpds, dopds], prefix+'_pds3')
+    
+def multipds(freq1, freq2, pds, dpds, outfile):
+    nsp, rest = shape(freq1)
+    formats = ['ko', 'rs', 'gd', 'bx']
     clf()
-    errorbar(freqc, mdot_pdsbin, xerr = freqs, yerr = mdot_dpdsbin1, fmt = 'gs', linewidth = 3.)
-    errorbar(freqc, mdot_pdsbin, xerr = freqs, yerr = mdot_dpdsbin2, fmt = 'ks')
-    errorbar(freqc, lBL_pdsbin, xerr = freqs, yerr = lBL_dpdsbin1, fmt = 'gd', linewidth = 3.)
-    errorbar(freqc, lBL_pdsbin, xerr = freqs, yerr = lBL_dpdsbin2, fmt = 'kd')
-    xlim([freqc.min()/2., freq2.max()])
+    fig=figure()
+    for k in arange(nsp):
+        freqc = (freq1[k]+freq2[k])/2.
+        freqs = (freq2[k]-freq1[k])/2.    
+        errorbar(freqc, pds[k] * freqc, xerr = freqs, yerr = dpds[k], fmt = formats[k], linewidth = 1.)
     xscale('log') ; yscale('log')
-    xlabel(r'$f$, Hz') ; ylabel(r'$PDS$')
+    xlabel(r'$f$, Hz', fontsize=20) ; ylabel(r'$f \, PDS$', fontsize=20)
+    tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    tick_params(labelsize=14, length=4, width=1., which='minor', direction ='in')
+    fig.set_size_inches(5, 6)
+    fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.eps')
     close()
@@ -157,9 +218,24 @@ def phaselag(binfreq, phaselag_bin, dphaselag_bin, mmdot_crossbin, npoints):
     plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
     xscale('log')
     xlabel(r'$f$, Hz') ; ylabel(r'$\Delta \varphi$')
+    tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    tick_params(labelsize=14, length=4, width=1., which='minor', direction ='in')
     savefig('phaselag.png')
     savefig('phaselag.eps')
     close()
+
+def plot_stored(ascfile):
+    lines = loadtxt(ascfile+'.dat', comments='#')
+    #     f1, f2, mdot, dmdot, d1mdot, y, dy, dy1, c, dc, dc1, p, dp, dp1, np
+    f1 = lines[:,0] ; f2 = lines[:,1]
+    binfreq = concatenate([f1, f2[-1:]])
+    mdot = lines[:,2] ; dmdot = lines[:,3] ; d1mdot = lines[:,4]
+    y = lines[:,5] ; dy = lines[:,6]  ; d1y = lines[:,7]
+    c = lines[:,8] ; dc = lines[:,9] ; dc1 = lines[:,10]
+    p = lines[:,11] ; dp = lines[:,12] ; dp1 = lines[:,13]
+    np = lines[:,14]
+    coherence(binfreq, c, dc, dc1, p, dp, dp1, np, outfile = ascfile+'_c')
+    pds(binfreq, mdot, dmdot, d1mdot, y, dy, d1y, np, outfile = ascfile+'_pds')
 
 def coherence(binfreq, coherence, dcoherence, dcoherence1,
               phaselag, dphaselag, dphaselag1,
@@ -172,8 +248,8 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     fig, ax = subplots(2,1)
     # ax[0].errorbar(binfreqc[w], abs(mmdot_crossbin[w]), xerr = binfreqs[w], yerr = dmmdot_crossbin[w]/sqrt(npoints[w]-1.), fmt = 'k.')
     # ax[0].set_xlabel(r'$f$, Hz') ;
-    ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [-pi,pi], 'g')
-    ax[0].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [-pi,pi], 'g--')
+    #    ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [-pi,pi], 'g')
+    ax[0].plot([r**(-1.5)*alpha/tscale,r**(-1.5)*alpha/tscale], [-pi,pi], 'g--')
     ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [-pi,pi], 'g-.')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
@@ -181,29 +257,30 @@ def coherence(binfreq, coherence, dcoherence, dcoherence1,
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi/2., 'r-')
     ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi, 'r-')
     ax[0].errorbar(binfreqc[w], phaselag[w], xerr = binfreqs[w],
-                   yerr = dphaselag[w], fmt = 'k.')
+                   yerr = (dphaselag)[w], fmt = 'k.')
     e1 = ax[0].errorbar(binfreqc[w]+binfreqs[w]*0.2, phaselag[w],
-                        yerr = dphaselag1[w], fmt = 'none')
+                        yerr = (dphaselag1)[w], fmt = 'none')
     e1[-1][0].set_linestyle(':')
     ax[0].set_xscale('log')  ; ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18) ; ax[0].set_ylim(-pi,pi)
-    ax[1].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,1.], 'g')
-    ax[1].plot([r**(-1.5)/tscale*alpha,r**(-1.5)/tscale*alpha], [0.,1.], 'g--')
-    ax[1].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,1.], 'g:')
+    #    ax[1].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,1.], 'g')
+    ax[1].plot([r**(-1.5)*alpha/tscale,r**(-1.5)*alpha/tscale], [0.,1.], 'g--')
+    ax[1].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,1.], 'g-.')
     ax[1].errorbar(binfreqc[w], coherence,
                    xerr = binfreqs[w], yerr = dcoherence[w], fmt = 'k.')
     e1 = ax[1].errorbar(binfreqc[w]+binfreqs[w]*0.2, coherence[w],
-                        yerr = dcoherence1[w], fmt = 'none')
+                        yerr = (dcoherence1)[w], fmt = 'none')
     e1[-1][0].set_linestyle(':')
     ax[1].set_xscale('log') # ;   ax[1].set_yscale('log')
     ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
-    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
-    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
-    fig.set_size_inches(10, 6)
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
+    fig.set_size_inches(5, 6)
     fig.tight_layout()
     savefig(outfile+'.png')
     savefig(outfile+'.eps')
+    savefig(outfile+'.pdf')
     close()
 
 def coherence_doubled(freq1, freq2, cross, dcross1, dcross2, mdot_pds, lBL_pds):
@@ -230,10 +307,10 @@ def coherence_doubled(freq1, freq2, cross, dcross1, dcross2, mdot_pds, lBL_pds):
                    xerr = freqs, yerr = dcross2 / sqrt(mdot_pds * lBL_pds), fmt = 'k.')
     ax[1].set_xscale('log')
     ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
-    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
-    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
     fig.set_size_inches(5, 6)
     fig.tight_layout()
     savefig('coherence2.png')
@@ -275,12 +352,110 @@ def biplot(f, bc, bphi, outname = 'biplot'):
     ax[1].set_xscale('log') ; ax[1].set_yscale('log')
     ax[0].set_xlim(fmin, fmax)  ;  ax[1].set_xlim(fmin, fmax)
     ax[0].set_ylim(fmin, fmax)  ;  ax[1].set_ylim(fmin, fmax)
-    ax[0].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor')
-    ax[1].tick_params(labelsize=14, length=6, width=1., which='major')
-    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor')
+    ax[0].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[0].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[1].tick_params(labelsize=14, length=3, width=1., which='minor', direction ='in')
     ax[0].set_title('bicoherence') ; ax[1].set_title('biphase')
     fig.set_size_inches(10, 4)
     fig.tight_layout()
     savefig(outname+'.png')
     close()
+
+####################################################3
+# plotting from binobject
+from timing import binobject
+
+def object_pds(freq, objlist, outfile):
+    nf = size(freq)-1 ;  no = size(objlist)
+    freqc = (freq[1:]+freq[:-1])/2.
+    freqs = (freq[1:]-freq[:-1])/2.
+
+    ebs = zeros(no, dtype = matplotlib.container.ErrorbarContainer)
+    
+    w = (objlist[0].npoints > 0)
+    clf()
+    fig=figure()
+    # plot(freq, mdot_pds, 'k,')
+    # plot(freq, lBL_pds, 'r,')
+    minf = max((freqc*objlist[0].av))
+    for ko in arange(no):
+        ebs[ko] = errorbar(freqc[w]+freqs[1]*0.2, (freqc*objlist[ko].av)[w], yerr = (freqc*objlist[ko].dbin)[w], fmt = 'none', color=colorsequence[ko])
+        ebs[ko][-1][0].set_linestyle(':')
+        errorbar(freqc[w], (freqc*objlist[ko].av)[w], xerr = freqs[w], yerr = (freqc*objlist[ko].densemble)[w], fmt = colorsequence[ko]+formatsequence[ko])
+        # /sqrt(double(objlist[ko].npoints-1))
+        minn = (freqc*objlist[ko].av)[w].min()
+        if minn < minf:
+            minf = minn
+    plot(freqc[w], minf * (freqc[w]/freqc[w].min())**(1.-nflick), 'k-')
+    xlim([freqc.min()/2., freq.max()])
+    xscale('log') ; yscale('log')
+    xlabel(r'$f$, Hz') ; ylabel(r'$f \, PDS$')
+    tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    tick_params(labelsize=14, length=4, width=1., which='minor', direction ='in')
+    fig.set_size_inches(5, 4)
+    fig.tight_layout()
+    savefig(outfile + '.png')
+    savefig(outfile + '.pdf')
+    close()
+    
+def object_coherence(freq, objlist, outfile):
+    nf = size(freq)-1 ;  no = size(objlist)
+    freqc = (freq[1:]+freq[:-1])/2.
+    freqs = (freq[1:]-freq[:-1])/2.
+
+    ebs_c = zeros(no, dtype = matplotlib.container.ErrorbarContainer)
+    ebs_p = zeros(no, dtype = matplotlib.container.ErrorbarContainer)
+    
+    w = (objlist[0].npoints > 0)
+    clf()
+    fig, ax = subplots(2,1)
+    # plot(freq, mdot_pds, 'k,')
+    # plot(freq, lBL_pds, 'r,')
+    for ko in arange(no):
+        print("mean phi = "+str(objlist[ko].phlag.mean())+"+/-"+str(objlist[ko].dphlag_bin.mean())+"+/-"+str(objlist[ko].dphlag_ensemble.mean()))
+        ebs_c[ko] = ax[1].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].c[w], yerr = (objlist[ko].dc_bin)[w], fmt = 'none', color=colorsequence[ko])
+        ebs_c[ko][-1][0].set_linestyle(':')
+        ax[1].errorbar(freqc[w], objlist[ko].c[w], xerr = freqs[w], yerr = (objlist[ko].dc_ensemble)[w], fmt = colorsequence[ko]+'.')
+        # /sqrt(double(objlist[ko].npoints-1))
+        ebs_p[ko] = ax[0].errorbar(freqc[w]+freqs[1]*0.2, objlist[ko].phlag[w], yerr = (objlist[ko].dphlag_bin)[w], fmt = 'none', color=colorsequence[ko])
+        ebs_p[ko][-1][0].set_linestyle(':')
+        ax[0].errorbar(freqc[w], objlist[ko].phlag[w], xerr = freqs[w], yerr = (objlist[ko].dphlag_ensemble)[w], fmt = colorsequence[ko]+'.')
+        # /sqrt(double(objlist[ko].npoints-1))
+    ax[0].yaxis.set_major_locator(plt.MultipleLocator(np.pi / 2))
+    ax[0].yaxis.set_minor_locator(plt.MultipleLocator(np.pi / 6))
+    ax[0].yaxis.set_major_formatter(plt.FuncFormatter(multiple_formatter()))
+    
+    ax[0].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [-pi,pi], 'g')
+    ax[0].plot([r**(-1.5)*alpha/tscale,r**(-1.5)*alpha/tscale], [-pi,pi], 'g--')
+    ax[0].plot([1./tscale/tdepl,1./tscale/tdepl], [-pi,pi], 'g-.')
+    ax[0].plot([freqc[0]-freqs[0], freqc[-1]+freqs[-1]], [0.,0.], 'r-')
+    ax[0].plot([freqc[0]-freqs[0], freqc[-1]+freqs[-1]], [pi,pi], 'r-')
+    ax[0].plot([freqc[0]-freqs[0], freqc[-1]+freqs[-1]], [-pi,-pi], 'r-')
+    ax[0].plot([freqc[0]-freqs[0], freqc[-1]+freqs[-1]], [pi/2.,pi/2.], 'r-')
+    ax[0].plot([freqc[0]-freqs[0], freqc[-1]+freqs[-1]], [-pi/2.,-pi/2.], 'r-')
+    #    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi/2., 'r-')
+    #    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.+pi, 'r-')
+    #    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi/2., 'r-')
+    #    ax[0].plot(freq[freq>0.], freq[freq>0.]*0.-pi, 'r-')
+    ax[1].plot([r**(-1.5)/tscale,r**(-1.5)/tscale], [0.,1.], 'g')
+    ax[1].plot([r**(-1.5)*alpha/tscale,r**(-1.5)*alpha/tscale], [0.,objlist[0].c.max()+objlist[0].dc_ensemble.max()+objlist[0].dc_bin.max()], 'g--')
+    ax[1].plot([1./tscale/tdepl,1./tscale/tdepl], [0.,objlist[0].c.max()+objlist[0].dc_ensemble.max()+objlist[0].dc_bin.max()], 'g-.')
+    ax[0].set_xlim([freqc.min()/2., freq.max()])
+    ax[1].set_xlim([freqc.min()/2., freq.max()])
+    #    ax[1].set_ylim([0.,1.])
+    ax[0].set_xscale('log')
+    ax[1].set_xscale('log') # ;   ax[1].set_yscale('log')
+    ax[1].set_xlabel(r'$f$, Hz', fontsize=18) ; ax[1].set_ylabel(r'coherence', fontsize=18)
+    ax[0].set_ylabel(r'$\Delta \varphi$', fontsize=18) ; ax[0].set_ylim(-pi,pi)
+    ax[0].tick_params(labelsize=16, length=6, width=1., which='major', direction ='in')
+    ax[0].tick_params(labelsize=16, length=2, width=1., which='minor', direction ='in')
+    ax[1].tick_params(labelsize=14, length=6, width=1., which='major', direction ='in')
+    ax[1].tick_params(labelsize=14, length=2, width=1., which='minor', direction ='in')
+    fig.set_size_inches(5, 7)
+    fig.tight_layout()
+    savefig(outfile+'.png')
+    savefig(outfile+'.eps')
+    savefig(outfile+'.pdf')
+    close()
+ 

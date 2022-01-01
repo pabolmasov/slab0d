@@ -2,7 +2,8 @@ import h5py
 import zarr
 from numpy import *
 
-from mslab import ifzarr
+# from mslab import ifzarr
+ifzarr =True
 
 '''
 inputs and outputs to HDF5 and zarr 
@@ -13,7 +14,7 @@ def entryname(n, ndig = 6):
     return entry
 
 def init(hname, t, mdot = None, alpha = None, tdepl = None,
-         nsims = None, nflick = None, tbreak = None): 
+         nsims = None, nflick = None, tbreak = None, regime = None): 
     '''
     creating the file and writing the time grid
     '''
@@ -22,6 +23,8 @@ def init(hname, t, mdot = None, alpha = None, tdepl = None,
     else:
         hfile = h5py.File(hname+".hdf5", "w")
     glo = hfile.create_group("globals")
+    if regime is not None:
+        glo.attrs['regime']  = regime
     if mdot is not None:
         glo.attrs['mdotmean']      = mdot
     if alpha is not None:
@@ -73,6 +76,7 @@ def read(hname, nentry, entry = None):
     '''
     read a single entry from an HDF5
     '''
+    print("hname = "+hname)
     if ifzarr:
         hfile = zarr.open(hname+".zarr", "r")
     else:
@@ -87,10 +91,13 @@ def read(hname, nentry, entry = None):
     print(vals)
     datalist = [] # list of the arrays read from the file
     for theval in vals:
+        #        print(theval)
         datalist.append(data[theval][:])
     if not ifzarr:
         hfile.close()
     return time, datalist
+        
+
     
 def vread(hname, valname = "mdot"):
     '''
